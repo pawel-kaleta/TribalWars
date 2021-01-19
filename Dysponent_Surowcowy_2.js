@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.2.2 (beta)
+//	version:	2.0.2.3 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -35,7 +35,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.2.2';
+	const version = 'v2.0.2.3';
     const ErrorHandler = {
         handle_error: function (error) {
 			var gui = '';
