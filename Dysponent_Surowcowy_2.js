@@ -20,7 +20,7 @@ javascript:
 //		2.0.2.3 - 19.01.2021 by PabloCanaletto
 //			> bug fix in willage choosing of shortages and surpluses
 
-
+/*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYŚLNE
 	resourcesFillTo: [20000, 20000, 20000],		// wypełniaj do tej wartości
@@ -31,7 +31,7 @@ var DysponentSurowcowy = {
 	extendedOptimization: true,					// czy optymalizacja może generować dodatkowych odbiorców (więcej klikania)
 	minSummon: 0,
 };
-
+*/
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
