@@ -15,10 +15,12 @@ javascript:
 //		2.0.2.1 - 17.01.2021 by PabloCanaletto
 //			> bug fix - reversed sort of potBrokers in relayThroughBrokers()
 //			> bug fix - typo 'vilages' in preventOverflowing()
-//		2.0.2.2 -  by PabloCanaletto
+//		2.0.2.2 - 18.01.2021 by PabloCanaletto
 //			> version label
+//		2.0.2.3 - 19.01.2021 by PabloCanaletto
+//			> bug fix in willage choosing of shortages and surpluses
 
-/*
+
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYŚLNE
 	resourcesFillTo: [20000, 20000, 20000],		// wypełniaj do tej wartości
@@ -29,7 +31,7 @@ var DysponentSurowcowy = {
 	extendedOptimization: true,					// czy optymalizacja może generować dodatkowych odbiorców (więcej klikania)
 	minSummon: 0,
 };
-*/
+
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
@@ -565,16 +567,10 @@ var DysponentSurowcowy = {
 					var res = null;
 					
 					for (var i=0; i<3; i++) {
-						if (receiver && shortages[i][0]) {
-							if (receiver.resources.owned[res] < shortages[i][0].resources.owned[i]) {
-								receiver = shortages[i][0];
-								res = i;
-							}
-						} else {
-							if (shortages[i][0]) {
-								receiver = shortages[i][0];
-								res = i;
-							}
+						if (!shortages[i][0]) { continue; }
+						if (!receiver || receiver.resources.owned[res] > shortages[i][0].resources.owned[i]) {
+							receiver = shortages[i][0];
+							res = i;
 						}
 					}
 
@@ -698,7 +694,8 @@ var DysponentSurowcowy = {
 					var res = null;
 
 					for (var i=0; i<3; i++) {
-						if ( ! (sender && sender.resources.owned[res] > villagesWithOverFlow[i][0].resources.owned[i]) ) {
+						if (!villagesWithOverFlow[i][0]) { continue; }
+						if (!sender || sender.resources.owned[res] < villagesWithOverFlow[i][0].resources.owned[i]) {
 							sender = villagesWithOverFlow[i][0];
 							res = i;
 						}
