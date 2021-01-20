@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.2.3 (beta)
+//	version:	2.0.2.4 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -11,14 +11,19 @@ javascript:
 //			> prototypes and alphas
 //		2.0.2.0 - 17.01.2021 by PabloCanaletto
 //			> first Beta
-//			> first feature complete version
+//			> major features complete
 //		2.0.2.1 - 17.01.2021 by PabloCanaletto
 //			> bug fix - reversed sort of potBrokers in relayThroughBrokers()
 //			> bug fix - typo 'vilages' in preventOverflowing()
 //		2.0.2.2 - 18.01.2021 by PabloCanaletto
 //			> version label
 //		2.0.2.3 - 19.01.2021 by PabloCanaletto
-//			> bug fix in willage choosing of shortages and surpluses
+//			> bug fix in village choosing of shortages and surpluses
+//		2.0.2.4 -  by PabloCanaletto
+//			> throwing erros instead of just console logging
+//			> img in header
+//			> handling groups with over 1k villages
+//			> data loading reorganisation for future development
 
 /*
 var DysponentSurowcowy = {
@@ -35,7 +40,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.2.3';
+	const version = 'v2.0.2.4 (beta)';
     const ErrorHandler = {
         handle_error: function (error) {
 			var gui = '';
@@ -87,7 +92,7 @@ var DysponentSurowcowy = {
 		isNewerVersion: function () { return typeof DysponentSurowcowy == 'undefined' && typeof settings != "undefined"; },
 		loadDefaults: async function () {
 			try {
-				if (!DysponentSurowcowy) { throw 'Nie znaleziono ustawień domyślnych. Zaleca się ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
+				if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawień domyślnych. Zaleca się ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
 				var errorSetting = 'Wykryto błąd w ustawieniach domyślnych.';
 				var adviceMessage = 'Zaleca się ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
 				for (const setting of Object.keys(DysponentSurowcowy)) {
@@ -171,20 +176,44 @@ var DysponentSurowcowy = {
 
 				return panel;
 			},
-			create_title: function () {
-				const div = document.createElement('div');
-				div.style.margin = '5px 5px 15px 5px';
+			create_stats_panel: function () {
+				const panel = document.createElement('div');
+				panel.classList.add('vis', 'vis_item');
 
-				const title = document.createElement('h2');
-				title.style.display = 'inline';
+				const table = document.createElement('table');
+				panel.append(table);
+
+				
+
+				return panel;
+			},
+			create_header: function () {
+				const div_main = document.createElement('div');
+				div_main.style.margin = '5px 5px 10px 5px';
+
+				const div_img = document.createElement('div');
+				div_img.style.float = 'left';
+				div_img.style.margin = '0px 5px 0px 0px';
+				div_main.append(div_img);
+
+				const img = document.createElement('img');
+				img.setAttribute('src', 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/awards/award2.png');
+				div_img.append(img);
+
+				const div_title = document.createElement('div');
+				div_title.style.margin = '0px 0px 0px 10px';
+				div_main.append(div_title);
+
+				const title = document.createElement('h1');
+				title.style.margin = '0px 0px 5px 0px';
 				title.innerText = "Dysponent Surowcowy";
-				div.append(title);
+				div_title.append(title);
 
 				const signature = document.createElement('span');
-				signature.innerText = ' by PabloCanaletto';
-				div.append(signature);
+				signature.innerText = 'by PabloCanaletto';
+				div_title.append(signature);
 
-				return div;
+				return div_main;
 			},
 			create_footer: function () {
 				const footer = document.createElement('div');
@@ -252,7 +281,6 @@ var DysponentSurowcowy = {
 				return submition_panel;
 			},
 			load_settings: function () {
-				Settings.sitter = (game_data.player.sitter !== '0') ? '&t=' + game_data.player.id : '';
 				for (option of this.options) {
 					var setting;
 					if (option.controls.length == 1) {
@@ -289,7 +317,7 @@ var DysponentSurowcowy = {
 				this.options = [
 					{
 						name: 'Wypełniaj do wartości',
-						description: 'Ilości surowców do jakich mają być standardowo wypełniane spichlerze. Główne ustawienie, które rozsyła surowce między wioskami dbając, aby ich dystrybucja na kondzie była równomiera i w każdym rejonie były zapasy. Ustawienie tej opcji na więcej niż średnia ilość surowców na wioskę nie ma sensu - skrypt nie wyczaruje surowców z powietrza.',
+						description: 'Ilości surowców do jakich mają być standardowo wypełniane spichlerze. Główne ustawienie, które rozsyła surowce między wioskami dbając, aby ich dystrybucja na koncie była równomiera i w każdym rejonie były zapasy. Ustawienie tej opcji na więcej niż średnia ilość surowców na wioskę nie ma sensu - skrypt nie wyczaruje surowców z powietrza.',
 						controls: [
 							{ type: 'input', attributes: { id: 'resourcesFillTo_wood',	size: 10, value: Settings.resourcesFillTo[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
 							{ type: 'input', attributes: { id: 'resourcesFillTo_stone',	size: 10, value: Settings.resourcesFillTo[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
@@ -346,9 +374,10 @@ var DysponentSurowcowy = {
 				div.style.margin = '0px 0px 10px 0px';
 				div.setAttribute('id', namespace);
 				div.classList.add('vis', 'vis_item');
-				div.append(this.create_title());
+				div.append(this.create_header());
 				div.append(this.create_script_description());
 				if (Settings.isNewerVersion()) { div.append(this.create_warning()); }
+				div.append(this.create_stats_panel());
 				div.append(this.create_main_panel());
 				div.append(this.create_submition_panel());
 				div.append(this.create_footer());
@@ -381,8 +410,8 @@ var DysponentSurowcowy = {
 					receiver: false
 				});
 			},
-			getBaseData: function () {
-				var table = $('#production_table')[0];
+			getBaseData: function (data) {
+				var table = $(data).find('#production_table')[0];
 				for (var i = 1; i < table.rows.length; i++) {
 					var row = table.rows[i];
 
@@ -392,48 +421,15 @@ var DysponentSurowcowy = {
 					var ID = $(row.cells[1]).find('.quickedit-vn')[0].dataset.id;
 
 					var resources = [0,0,0];
-					row.cells[3].innerText.split(" ").map(x => Number(x.replace('.', ''))).forEach((x, i) => {
+					row.cells[3].innerText.trim().split(' ').map(x => Number(x.replace('.', ''))).forEach((x, i) => {
 						resources[i] = x;
 					});
 					if(resources.length != 3) { throw 'Wczytano złą liczbę rodzajów surowców'; }
-
 					var granary = Number(row.cells[4].innerText);
 					var traders = row.cells[5].innerText.split("/").map(x => Number(x));
 
 					this.addVillage(coords, ID, resources, granary, traders);
 				}
-			},
-			getOngoingTransports: function (data) {
-				let table = $(data).find('#trades_table').get()[0];
-				if (!table) { throw 'Wystąpił błąd podczas pobierania danych z przeglądu transportów.'; }
-
-				for (var i = 1; i < table.rows.length - 1; i++) {
-					var row = table.rows[i];
-
-					var id = $(row.cells[4]).find('a')[0].href.split('id=')[1];
-
-					var incommings = $(row.cells[8]).find('.nowrap');
-					for (var j = 0; j < incommings.length; j++) {
-						var res = Number(incommings[j].innerText.replace('.', ''));
-
-						var icon = incommings[j].getElementsByClassName("icon header")[0];
-						var index = -1;
-						if (icon.title == "Drewno")	{ index = 0; }
-						if (icon.title == "Glina")	{ index = 1; }
-						if (icon.title == "Żelazo")	{ index = 2; }
-						if (index == -1) { throw 'Błąd w rozpoznawaniu surowców w aktywnym transporcie'; }
-
-						for (var k = 0; k < this.villages.length; k++) {
-							if (this.villages[k].ID == id) {
-								this.villages[k].resources.comming[index] += res;
-								this.villages[k].resources.owned[index] += res;
-								break;
-							}
-						}
-					}
-				}
-
-				Script.planCreator.createPlan();
 			},
 			updateVillages: function (transport, plus_minus_1) {
 				let origin 		= transport.origin;
@@ -506,6 +502,38 @@ var DysponentSurowcowy = {
 				transport.traders -= (resources[0] + resources[1] + resources[2]) / 1000;
 				for (var k=0; k<3; k++) { transport.resources[k] -= resources[k]; }
 				Script.villagesHandler.updateVillages(transport, 1);
+			},
+			getOngoingTransports: function (data) {
+				let table = $(data).find('#trades_table').get()[0];
+				if (!table) { throw 'Wystąpił błąd podczas pobierania danych z przeglądu transportów.'; }
+
+				let villages = Script.villagesHandler.villages;
+
+				for (var i = 1; i < table.rows.length - 1; i++) {
+					var row = table.rows[i];
+
+					var id = $(row.cells[4]).find('a')[0].href.split('id=')[1];
+
+					var incommings = $(row.cells[8]).find('.nowrap');
+					for (var j = 0; j < incommings.length; j++) {
+						var res = Number(incommings[j].innerText.replace('.', ''));
+
+						var icon = incommings[j].getElementsByClassName("icon header")[0];
+						var index = -1;
+						if (icon.title == "Drewno")	{ index = 0; }
+						if (icon.title == "Glina")	{ index = 1; }
+						if (icon.title == "Żelazo")	{ index = 2; }
+						if (index == -1) { throw 'Błąd w rozpoznawaniu surowców w aktywnym transporcie'; }
+
+						for (var k = 0; k < villages.length; k++) {
+							if (villages[k].ID == id) {
+								villages[k].resources.comming[index] += res;
+								villages[k].resources.owned[index] += res;
+								break;
+							}
+						}
+					}
+				}
 			}
 		},
 		planCreator: {
@@ -546,7 +574,7 @@ var DysponentSurowcowy = {
 					compareVillages.noReverse = 1;
 					shortages[i].sort(compareVillages.resources[i]);
 					if(shortages[i][1] && shortages[i][0].resources[i] > shortages[i][1].resources[i]) {
-						console.log('ERROR: fillVillages() shortages sort is reversed');
+						throw 'ERROR: fillVillages() shortages sort is reversed';
 					}
 				}
 
@@ -559,10 +587,7 @@ var DysponentSurowcowy = {
 
 				let counter_1 = 0
 				while (	anyShortage() && surpluses.length > 0 ) {
-					if(counter_1++ > 1000) {
-						console.log("ERROR: fillVillages(): while_1 is infinite");
-						break;
-					}
+					if(counter_1++ > 1000) { throw 'ERROR: fillVillages(): while_1 is infinite'; }
 					var receiver = null;
 					var res = null;
 					
@@ -574,14 +599,14 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (!receiver || typeof(res) === null) { console.log('ERROR: fillVillages(): no receiver or no res'); }
+					if (!receiver || typeof(res) === null) { throw 'ERROR: fillVillages(): no receiver or no res'; }
 
 					compareVillages.refCoords = receiver.coords;
 					compareVillages.noReverse = 1;
 					surpluses.sort(compareVillages.distance);
 
 					if (surpluses[1] && Utilities.distance(surpluses[0].coords, receiver.coords) > Utilities.distance(surpluses[1].coords, receiver.coords)) {
-						console.log('ERROR: fillVillages() surpluses sort is reversed');
+						throw 'ERROR: fillVillages() surpluses sort is reversed';
 					}
 
 					var lack = resoucesTargetLevel[res];
@@ -597,10 +622,7 @@ var DysponentSurowcowy = {
 					var firstLooper = null;
 					let counter_2 = 0;
 					while (surpluses[0] && surpluses[0] != firstLooper) {
-						if(counter_2++ > 1000) {
-							console.log("ERROR: fillVillages(): while_2 is infinite");
-							break;
-						}
+						if(counter_2++ > 1000) { throw 'ERROR: fillVillages(): while_2 is infinite'; }
 						var spare = surpluses[0].resources.present[res] - resoucesTargetLevel[res];
 						if (spare < 1000)
 						{
@@ -614,7 +636,7 @@ var DysponentSurowcowy = {
 							continue;
 						}
 
-						if(surpluses[0] === receiver) { console.log("ERROR: fillVillages(): origin === destination"); }
+						if(surpluses[0] === receiver) { throw 'ERROR: fillVillages(): origin === destination'; }
 
 						var transportResources = [0,0,0];
 						transportResources[res] = 1000;
@@ -631,10 +653,7 @@ var DysponentSurowcowy = {
 					var pointer = 0;
 					let counter_3 = 0;
 					while (pointer < shortages[res].length-1) {
-						if(counter_3++ > 1000) {
-							console.log("ERROR: fillVillages(): while_3 is infinite");
-							break;
-						}
+						if(counter_3++ > 1000) { throw 'ERROR: fillVillages(): while_3 is infinite'; }
 						if (shortages[res][pointer].resources[res] > shortages[res][pointer+1]) { break; }
 						Utilities.swap(shortages[res], pointer, pointer+1);
 						pointer++;
@@ -673,7 +692,7 @@ var DysponentSurowcowy = {
 				for (var i=0; i<3; i++) {
 					villagesWithOverFlow[i].sort(compareVillages.resources[i]);
 					if (villagesWithOverFlow[i][1] && villagesWithOverFlow[i][0].resources[i] < villagesWithOverFlow[i][1].resources[i]) {
-						console.log("ERROR: preventOverflowing(): overFlows sort is reversed");
+						throw 'ERROR: preventOverflowing(): overFlows sort is reversed';
 					}
 				}
 
@@ -686,10 +705,7 @@ var DysponentSurowcowy = {
 
 				var counter_1 = 0;
 				while (preventionPossible()) {
-					if(counter_1++ > 1000) {
-						console.log("ERROR: preventOverflowing(): while_1 is infinite");
-						break;
-					}
+					if(counter_1++ > 1000) { throw 'ERROR: preventOverflowing(): while_1 is infinite'; }
 					var sender = null;
 					var res = null;
 
@@ -701,9 +717,7 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (!sender || !res) {
-						console.log('ERROR: preventOverflowing(): no sender or no res');
-					}
+					if (!sender || !res) { throw 'ERROR: preventOverflowing(): no sender or no res'; }
 
 					var overFlow = sender.resources.owned[res];
 					overFlow -= sender.granary * resoucesTargetLevel / 100;
@@ -718,15 +732,12 @@ var DysponentSurowcowy = {
 					villagesWithSpareGranary[res].sort(compareVillages.distance);
 
 					if (villagesWithSpareGranary[res].length > 1 && Utilities.distance(villagesWithSpareGranary[res][0].coords, sender.coords) > Utilities.distance(villagesWithSpareGranary[res][1].coords, sender.coords)) {
-						console.log("ERROR: preventOverflowing(): spareGranarys sort is reversed");
+						throw 'ERROR: preventOverflowing(): spareGranarys sort is reversed';
 					}
 
 					var counter_2 = 0;
 					while (villagesWithSpareGranary[res][0]) {
-						if(counter_2++ > 1000) {
-							console.log("ERROR: preventOverflowing(): while_2 is infinite");
-							break;
-						}
+						if(counter_2++ > 1000) { throw 'ERROR: preventOverflowing(): while_2 is infinite'; }
 						var receiver = villagesWithSpareGranary[res][0];
 						var spereSpace = receiver.granary * resoucesTargetLevel / 100;
 						spereSpace -= receiver.resources.owned[res];
@@ -739,7 +750,7 @@ var DysponentSurowcowy = {
 						var transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
-						if(transportVillages.origin === transportVillages.destination) { console.log("ERROR: preventOverFlowing(): origin === destination"); }
+						if(transportVillages.origin === transportVillages.destination) { throw 'ERROR: preventOverFlowing(): origin === destination'; }
 
 						var l = Script.transportsHandler.addTransport(transports, transportResources, sender, receiver);
 						Script.villagesHandler.updateVillages(transports[l-1], 1);
@@ -764,10 +775,7 @@ var DysponentSurowcowy = {
 
 					var counter_4 = 0;
 					while (true) {
-						if(counter_4++ > 500) {
-							console.log("ERROR: createPlan(): while is infinite");
-							throw Error('createPlan(): while is infinite');
-						}
+						if(counter_4++ > 500) { throw 'ERROR: createPlan(): while is infinite'; }
 						var increase = false;
 						for (var i=0; i<3; i++) {
 							if (resTarget[i] < Settings.resourcesFillTo[i]) {
@@ -911,18 +919,11 @@ var DysponentSurowcowy = {
 					Settings.resourcesRelayBuffer[i] = tmp;
 				}
 
-				Script.villagesHandler.getBaseData();
-
 				if (Settings.considerOngoingTransports) {
-					$.ajax({
-						url: '/game.php?screen=overview_villages&mode=trader&type=inc&page=-1' + Settings.sitter,
-						type: 'GET',
-						success: function (response) { Script.villagesHandler.getOngoingTransports(response); }
-					});
+					
 				}
-				else {
-					this.createPlan();
-				}
+				
+				this.createPlan();
 			}
 		},
 		planOptimizer: {
@@ -955,7 +956,7 @@ var DysponentSurowcowy = {
 									var origin = 		transports[i*(k) + j*(1-k)].origin;
 									var destination =	transports[j*(k) + i*(1-k)].destination;
 
-									if(origin === destination) { console.log("ERROR: reduceSums(): origin === destination"); }
+									if(origin === destination) { throw 'ERROR: reduceSums(): origin === destination'; }
 
 									var l = Script.transportsHandler.addTransport(transports, resources, origin, destination);
 									Script.villagesHandler.updateVillages(transports[l-1], 1);
@@ -963,7 +964,6 @@ var DysponentSurowcowy = {
 							}
 						}
 					}
-					console.log("end of reduceSums()");
 				},
 				merge: function (transports) {
 					console.log("merge()");
@@ -977,10 +977,7 @@ var DysponentSurowcowy = {
 
 					var counter_1 = 0;
 					for (var i=0; i < transports.length-1; i++) {
-						if(counter_1++ > 1000) {
-							console.log("ERROR: merge(): for_1 is infinite");
-							break;
-						}
+						if(counter_1++ > 1000) { throw 'ERROR: merge(): for_1 is infinite'; }
 						if (if_same_route(transports[i], transports[i+1])) {
 							let resources = [0,0,0];
 							for (var j=0; j<3; j++) { resources[j] = transports[i].resources[j] + transports[i+1].resources[j];	}
@@ -1028,10 +1025,7 @@ var DysponentSurowcowy = {
 					console.log("removeEmptys()");
 					var counter_1 = 0;
 					for (var i=0; i<transports.length; i++) {
-						if(counter_1++ > 1000) {
-							console.log("ERROR: removeEmptys(): for_1 is infinite");
-							break;
-						}
+						if(counter_1++ > 1000) { throw 'ERROR: removeEmptys(): for_1 is infinite'; }
 						if (transports[i].traders == 0) {
 							Utilities.swap(transports, 0, i);
 							transports.shift();
@@ -1068,7 +1062,7 @@ var DysponentSurowcowy = {
 										Script.transportsHandler.reduceTransport(res, transports[i]);
 										Script.transportsHandler.reduceTransport(res, transports[j]);
 
-										if(route.origin == route.destination) { console.log("ERROR: removeSuboptimalBrokers(): origin === destination"); }
+										if(route.origin == route.destination) { throw 'ERROR: removeSuboptimalBrokers(): origin === destination'; }
 										
 										var l = Script.transportsHandler.addTransport(transports, res, transports[i].origin, transports[j].destination);
 										Script.villagesHandler.updateVillages(transports[l-1], 1);
@@ -1115,13 +1109,13 @@ var DysponentSurowcowy = {
 					for (var i=0; i<transports.length; i++) {
 						transports.sort(Script.transportsHandler.compareTransports.cost);
 						if (transports[1] && Script.transportsHandler.transportCost(transports[0]) < Script.transportsHandler.transportCost(transports[1])) {
-							console.log('ERROR: relayThroughBrokers() transports sort is reversed');
+							throw 'ERROR: relayThroughBrokers() transports sort is reversed';
 						}
 
 						refTrans = transports[i];
 						potBrokers.sort(comparePotentialBrokers);
 						if (potBrokers[1] && maxDistRelay(potBrokers[0]) > maxDistRelay(potBrokers[1])) {
-							console.log('ERROR: relayThroughBrokers() potBrokers sort is reversed');
+							throw 'ERROR: relayThroughBrokers() potBrokers sort is reversed';
 						}
 
 						for (var j=0; j<potBrokers.length; j++) {
@@ -1147,11 +1141,11 @@ var DysponentSurowcowy = {
 
 							Script.transportsHandler.reduceTransport(res, transports[i]);
 
-							if(transports[i].origin == potBrokers[j]) { console.log("ERROR: relayThrougBrokers(): origin === destination (1)"); }
+							if(transports[i].origin == potBrokers[j]) { throw 'ERROR: relayThrougBrokers(): origin === destination (1)'; }
 							var l = Script.transportsHandler.addTransport(transports, res, transports[i].origin, potBrokers[j]);
 							Script.villagesHandler.updateVillages(transports[l-1], 1);
 
-							if(potBrokers[j] == transports[i].destination) { console.log("ERROR: relayThrougBrokers(): origin === destination (2)"); }
+							if(potBrokers[j] == transports[i].destination) { throw 'ERROR: relayThrougBrokers(): origin === destination (2)'; }
 							l = Script.transportsHandler.addTransport(transports, res, potBrokers[j], transports[i].destination);
 							Script.villagesHandler.updateVillages(transports[l-1], 1);
 
@@ -1246,16 +1240,28 @@ var DysponentSurowcowy = {
 			}
 		},
         main: async function () {
-			if (document.URL.indexOf("screen=overview_villages") != -1) {
-				if (game_data.mode == "prod" || document.URL.indexOf("mode=prod") != -1) {
-					if ($('#'+namespace)[0]) {
-						$('#'+namespace)[0].remove();
-						return;
-					}
-					Script.gui.create_gui();
+			if (game_data.screen == 'overview_villages') {
+				if ($('#'+namespace)[0]) {
+					$('#'+namespace)[0].remove();
 					return;
 				} else {
-					UI.ErrorMessage('Dysponent Surowcowy: Spróbuj ponownie otworzyć przegląd produkcji.', 10000);
+					Settings.sitter = (game_data.player.sitter !== '0') ? '&t=' + game_data.player.id : '';
+
+					$.ajax({
+						url: '/game.php?screen=overview_villages&mode=prod&page=-1' + Settings.sitter,
+						type: 'GET',
+						async: false,
+						success: function (response) { try { Script.villagesHandler.getBaseData(response); } catch (ex) { ErrorHandler.handle_error(ex); } }
+					});
+
+					$.ajax({
+						url: '/game.php?screen=overview_villages&mode=trader&type=inc&page=-1' + Settings.sitter,
+						type: 'GET',
+						async: false,
+						success: function (response) { try { Script.transportsHandler.getOngoingTransports(response); } catch (ex) { ErrorHandler.handle_error(ex); } }
+					});
+
+					Script.gui.create_gui();
 					return;
 				}
 			}
