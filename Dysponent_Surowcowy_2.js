@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.2.4 (beta)
+//	version:	2.0.3.0 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -19,13 +19,16 @@ javascript:
 //			> version label
 //		2.0.2.3 - 19.01.2021 by PabloCanaletto
 //			> bug fix in village choosing of shortages and surpluses
-//		2.0.2.4 -  by PabloCanaletto
+//		2.0.2.4 - 20.01.2021 by PabloCanaletto
 //			> throwing erros instead of just console logging
 //			> img in header
 //			> handling groups with over 1k villages
 //			> data loading reorganisation for future development
+//		2.0.3.0 - 21.01.2021 by PabloCanaletto
+//			> stats panel
+//			> storing onging transports for stats
 
-/*
+
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYŚLNE
 	resourcesFillTo: [20000, 20000, 20000],		// wypełniaj do tej wartości
@@ -36,11 +39,11 @@ var DysponentSurowcowy = {
 	extendedOptimization: true,					// czy optymalizacja może generować dodatkowych odbiorców (więcej klikania)
 	minSummon: 0,
 };
-*/
+
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.2.4 (beta)';
+	const version = 'v2.0.3.0 (beta)';
     const ErrorHandler = {
         handle_error: function (error) {
 			var gui = '';
@@ -78,6 +81,24 @@ var DysponentSurowcowy = {
 			tab[ib] = temp;
 		},
 		distance: function (cA, cB) { return Math.sqrt(Math.pow(cB.x - cA.x, 2) + Math.pow(cB.y - cA.y, 2));
+		},
+		beautifyNumber: function (number) {
+			let prefix = ['', 'K', 'M', 'G'];
+			for (let i = 0; i < prefix.length; i++) {
+				if (number >= 1000) {
+					number /= 1000;
+				} else {
+					if (i === 0)
+						return number;
+					let fraction = 2;
+					if (number >= 10)
+						fraction = 1;
+					if (number >= 100)
+						fraction = 0;
+					return `${number.toFixed(fraction)}${prefix[i]}`;
+				}
+			}
+			return `${number.toFixed(0)}T`;
 		}
 	};
 	var Settings = {
@@ -176,14 +197,163 @@ var DysponentSurowcowy = {
 
 				return panel;
 			},
+			gather_stats: function (panel_data) {
+				let villages = Script.villagesHandler.villages;
+				let transports = Script.transportsHandler.ongoingTransports;
+
+				for (var i=0; i<villages.length; i++) {
+					panel_data.gran_sum 	+= villages[i].granary;
+					panel_data.trad_sum_in	+= villages[i].traders.free;
+					panel_data.trad_sum_all	+= villages[i].traders.all;
+					for (var j=0; j<3; j++) {
+						panel_data.res_sum_in[j] += villages[i].resources.present[j];
+					}
+				}
+				for (var i=0; i<transports.length; i++) {
+					for (var j=0; j<3; j++) {
+						panel_data.res_sum_out[j] += transports[i].resources[j];
+					}
+				}
+				panel_data.trad_sum_out = panel_data.trad_sum_all - panel_data.trad_sum_in;
+				panel_data.gran_avg =		Math.floor(panel_data.gran_sum		/ villages.length);
+				panel_data.trad_avg_all =	Math.floor(panel_data.trad_sum_all	/ villages.length);
+				panel_data.trad_avg_out =	Math.floor(panel_data.trad_sum_out	/ villages.length);
+				panel_data.trad_avg_in =	Math.floor(panel_data.trad_sum_in	/ villages.length);
+				for (var i=0; i<3; i++) {
+					panel_data.res_sum_all[i] = panel_data.res_sum_in[i] + panel_data.res_sum_out[i];
+					panel_data.res_avg_in[i] =	Math.floor(panel_data.res_sum_in[i]		/ villages.length);
+					panel_data.res_avg_out[i] =	Math.floor(panel_data.res_sum_out[i]	/ villages.length);
+					panel_data.res_avg_all[i] =	Math.floor(panel_data.res_sum_all[i]	/ villages.length);
+				}
+			},
 			create_stats_panel: function () {
+				console.log('ERROR: create_stats_panel() out of error handling');
 				const panel = document.createElement('div');
 				panel.classList.add('vis', 'vis_item');
 
+				const img1 = document.createElement('img');
+				img1.setAttribute('src', 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/big_buildings/hd/market3.png');
+				img1.style.height = '203px';
+				img1.style.float = 'left';
+
+				const img2 = document.createElement('img');
+				img2.setAttribute('src', 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/big_buildings/hd/storage3.png');
+				img2.style.height = '203px';
+				img2.style.float = 'right';
+
+				panel.append(img1);
+				panel.append(img2);
+
 				const table = document.createElement('table');
+				table.style['border-spacing'] = '2px';
+				table.style['border-collapse'] = 'separate';
+				table.style.margin = '0 auto';
 				panel.append(table);
 
+				var panel_data = {
+					res_sum_in:		[0,0,0],
+					res_sum_out:	[0,0,0],
+					res_sum_all:	[0,0,0],
+					res_avg_in:		[0,0,0],
+					res_avg_out:	[0,0,0],
+					res_avg_all:	[0,0,0],
+					trad_sum_in:	0,
+					trad_sum_out:	0,
+					trad_sum_all:	0,
+					trad_avg_in:	0,
+					trad_avg_out:	0,
+					trad_avg_all:	0,
+					gran_sum:		0,
+					gran_avg:		0
+				};
 				
+				this.gather_stats(panel_data);
+
+				table.innerHTML = `
+					<tbody>
+						<tr>
+							<th colspan="8" style="text-align: center">Surowce Sumarycznie</th>
+						</tr>
+						<tr>
+							<th colspan="3" style="text-align: center">W wioskach</th>
+							<th colspan="3" style="text-align: center">W transportach</th>
+							<th colspan="2" style="text-align: center">Razem</th>
+						</tr>
+						<tr class="row_b">
+							<td colspan="3" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_in[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_in[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_in[2])}</span>
+							</td>
+							<td colspan="3" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_out[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_out[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_out[2])}</span>
+							</td>
+							<td colspan="2" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_all[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_all[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_sum_all[2])}</span>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="8"></th>
+						</tr>
+						<tr>
+							<th colspan="8" style="text-align: center">Surowce średnio na wioskę</th>
+						</tr>
+						<tr>
+							<th colspan="3" style="text-align: center">W wiosce</th>
+							<th colspan="3" style="text-align: center">W transportach</th>
+							<th colspan="2" style="text-align: center">Razem</th>
+						</tr>
+						<tr class="row_b">
+							<td colspan="3" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_in[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_in[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_in[2])}</span>
+							</td>
+							<td colspan="3" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_out[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_out[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_out[2])}</span>
+							</td>
+							<td colspan="2" style="text-align: center">
+								<span class="res wood" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_all[0])}</span>
+								<span class="res stone" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_all[1])}</span>
+								<span class="res iron" style="padding: 1px 1px 1px 18px;">${Utilities.beautifyNumber(panel_data.res_avg_all[2])}</span>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="8"></th>
+						</tr>
+						<tr>
+							<th colspan="3" style="text-align: center">Kupcy Sumarycznie</th>
+							<th colspan="3" style="text-align: center">Kupcy średnio na wioskę</th>
+							<th colspan="2" style="text-align: center">Pojemność spichlerzy</th>
+						</tr>
+						<tr>
+							<th style="text-align: center">Dostępni</th>
+							<th style="text-align: center">Niedostępni</th>
+							<th style="text-align: center">Razem</th>
+							<th style="text-align: center">Dostępni</th>
+							<th style="text-align: center">Niedostępni</th>
+							<th style="text-align: center">Razem</th>
+							<th style="text-align: center">Sumaryczna</th>
+							<th style="text-align: center">Średnia</th>
+						</tr>
+						<tr class="row_b">
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_in)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_out)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_all)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_in)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_out)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_all)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.gran_sum)}</td>
+							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.gran_avg)}</td>
+						</tr>
+					</tbody>
+				`;
 
 				return panel;
 			},
@@ -474,6 +644,7 @@ var DysponentSurowcowy = {
 			}
 		},
 		transportsHandler: {
+			ongoingTransports: [],
 			priorityTransports: [],
 			generalTransports: [],
 			addTransport: function (_transports, _resources, _origin, _destination) {
@@ -505,16 +676,16 @@ var DysponentSurowcowy = {
 			},
 			getOngoingTransports: function (data) {
 				let table = $(data).find('#trades_table').get()[0];
-				if (!table) { throw 'Wystąpił błąd podczas pobierania danych z przeglądu transportów.'; }
-
-				let villages = Script.villagesHandler.villages;
+				if (!table) { throw 'Wystąpił błąd podczas pobierania danych z przeglądu transportów.'; }	
 
 				for (var i = 1; i < table.rows.length - 1; i++) {
-					var row = table.rows[i];
+					var cells = table.rows[i].cells;
 
-					var id = $(row.cells[4]).find('a')[0].href.split('id=')[1];
+					var id = $(cells[4]).find('a')[0].href.split('id=')[1];
+					var traders = Number(cells[7].innerText);
+					var resources = [0,0,0];
 
-					var incommings = $(row.cells[8]).find('.nowrap');
+					var incommings = $(cells[8]).find('.nowrap');
 					for (var j = 0; j < incommings.length; j++) {
 						var res = Number(incommings[j].innerText.replace('.', ''));
 
@@ -525,14 +696,9 @@ var DysponentSurowcowy = {
 						if (icon.title == "Żelazo")	{ index = 2; }
 						if (index == -1) { throw 'Błąd w rozpoznawaniu surowców w aktywnym transporcie'; }
 
-						for (var k = 0; k < villages.length; k++) {
-							if (villages[k].ID == id) {
-								villages[k].resources.comming[index] += res;
-								villages[k].resources.owned[index] += res;
-								break;
-							}
-						}
+						resources[index] = res;
 					}
+					this.ongoingTransports.push({villageID: id, traders: traders, resources: resources});
 				}
 			}
 		},
@@ -919,8 +1085,21 @@ var DysponentSurowcowy = {
 					Settings.resourcesRelayBuffer[i] = tmp;
 				}
 
-				if (Settings.considerOngoingTransports) {
-					
+				if (Settings.considerOngoingTransports && Script.transportsHandler.ongoingTransports[0]) {
+					let transports = Script.transportsHandler.ongoingTransports;
+					let villages = Script.villagesHandler.villages;
+
+					for (var i=0; i<transports.length; i++) {
+						for (var j = 0; j < villages.length; j++) {
+							if (villages[j].ID == transports[i].villageID) {
+								for (var k=0; k<3; k++) {
+									villages[j].resources.comming[k] += transports[i].resources[k];
+									villages[j].resources.owned[k] += transports[i].resources[k];
+								}
+								break;
+							}
+						}
+					}
 				}
 				
 				this.createPlan();
@@ -1240,13 +1419,13 @@ var DysponentSurowcowy = {
 			}
 		},
         main: async function () {
+			Settings.sitter = (game_data.player.sitter !== '0') ? '&t=' + game_data.player.id : '';
+
 			if (game_data.screen == 'overview_villages') {
 				if ($('#'+namespace)[0]) {
 					$('#'+namespace)[0].remove();
 					return;
 				} else {
-					Settings.sitter = (game_data.player.sitter !== '0') ? '&t=' + game_data.player.id : '';
-
 					$.ajax({
 						url: '/game.php?screen=overview_villages&mode=prod&page=-1' + Settings.sitter,
 						type: 'GET',
