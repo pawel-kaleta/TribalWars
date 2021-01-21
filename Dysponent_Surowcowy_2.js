@@ -28,7 +28,7 @@ javascript:
 //			> stats panel
 //			> storing onging transports for stats
 
-
+/*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYŚLNE
 	resourcesFillTo: [20000, 20000, 20000],		// wypełniaj do tej wartości
@@ -39,7 +39,7 @@ var DysponentSurowcowy = {
 	extendedOptimization: true,					// czy optymalizacja może generować dodatkowych odbiorców (więcej klikania)
 	minSummon: 0,
 };
-
+*/
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
