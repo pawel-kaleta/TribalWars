@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.4.0 (beta)
+//	version:	2.0.4.1 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -34,16 +34,19 @@ javascript:
 //			> added Debug Log for customer support
 //			> bug fix - added normalization of allTransports
 //			> logging extention
+//		2.0.4.1 - 23.01.2021 by PabloCanaletto
+//			> character escapes
+//			> bug fix - wrong reference in preventOverflowing
 
 /*
 var DysponentSurowcowy = {
-	// USTAWIENIA DOMYŚLNE
+	// USTAWIENIA DOMYSLNE
 	resourcesFillTo: [45000, 50000, 50000],		// wypełniaj do tej wartości
-	resourcesSafeguard: [10000, 10000, 10000],	// zabezpieczenie w surowcach, wypełniane priorytetowo
+	resourcesSafeguard: [10000, 10000, 10000],	// zabezpieczenie w surowcach, wypelniane priorytetowo
 	tradersSafeguard: 0,						// zabezpieczenie w kupcach
-	considerOngoingTransports: true,			// uwzględnij przychodzące transporty (tak - true, nie - false)
-	overFlowThreshold: 75,						// % pojemności spichlerza, powyżej którego zapobiegaj przelewaniu się
-	extendedOptimization: true,					// czy optymalizacja może generować dodatkowych odbiorców (więcej klikania)
+	considerOngoingTransports: true,			// uwzglednij przychodzace transporty (tak - true, nie - false)
+	overFlowThreshold: 75,						// % pojemnosci spichlerza, powyzej ktorego zapobiegaj przelewaniu sie
+	extendedOptimization: true,					// czy optymalizacja moze generowac dodatkowych odbiorcow (wiecej klikania)
 	minSummon: 0,
 	debug: true
 };
@@ -51,7 +54,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.4.0 (beta)';
+	const version = 'v2.0.4.1 (beta)';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -72,16 +75,16 @@ var DysponentSurowcowy = {
 			var gui = '';
             if (typeof (error) === 'string') {
 				gui = `
-				<h2>Coś poszło nie tak...</h2>
+				<h2>Co\u015B posz\u0142o nie tak...</h2>
 				<p>
 					<strong>${error}</strong><br/>
 					<br/>
-					Po dodatkową pomoc zajrzyj do wątku dotyczącego tego skryptu na Forum Ogólnym. Jeśli nie znajdziesz tam żadnych informacji napisz zgłoszenie załączając poniższy komunikat o błędzie.<br/>
+					Po dodatkow\u0105 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum Og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy komunikat o b\u0142\u0119dzie.<br/>
 					<br/>
-					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do wątku na forum</a></br>
+					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do w\u0105tku na forum</a></br>
 					<br/>
 					<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
-					<textarea rows='5' cols='100'>[spoiler=Komunikat o błędzie][b]${error}[/b]\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler][/spoiler]</textarea>
+					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler][/spoiler]</textarea>
 				</p>
 				`;
             }
@@ -89,12 +92,12 @@ var DysponentSurowcowy = {
 				gui = `
 					<h2>WTF - What a Terrible Failure</h2>
 					<p>
-						<strong>Wystąpił nieoczekiwany błąd. Aby uzyskać pomoc zajrzyj do wątku dotyczącego tego skryptu na Forum ogólnym. Jeśli nie znajdziesz tam żadnych informacji napisz zgłoszenie załączając poniższy komunikat o błędzie.</strong><br/>
+						<strong>Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d. Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy komunikat o b\u0142\u0119dzie.</strong><br/>
 						<br/>
 						<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do wątku na forum</a><br/>
 						<br/>
 						<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
-						<textarea rows='5' cols='100'>[spoiler=Komunikat o błędzie][b]${error}[/b]\n\n${error.stack}\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler]</textarea>
+						<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n\n${error.stack}\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler]</textarea>
 					</p>
 				`;
 			}
@@ -139,21 +142,23 @@ var DysponentSurowcowy = {
 		sitter: 					'',
 		debug: 						false,
 		isNewerVersion: function () { return typeof DysponentSurowcowy == 'undefined' && typeof settings != "undefined"; },
-		loadDefaults: function () {
-			Debugger.logLine('loadDefaults()');
-			if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawień domyślnych. Zaleca się ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
-			var errorSetting = 'Wykryto błąd w ustawieniach domyślnych.';
-			var adviceMessage = 'Zaleca się ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
-			for (const setting of Object.keys(DysponentSurowcowy)) {
-				if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
-				if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano wartości ustawienia: "' + setting + '". ' + adviceMessage; }
-				if (typeof this[setting] == typeof [0,0,0]) {
-					if (this[setting].length != DysponentSurowcowy[setting].length) {
-						throw errorSetting + ' Liczba wartości ustawienia: "' + setting + '" jest niewłaściwa. ' + adviceMessage; 
+		loadDefaults: async function () {
+			try {
+				Debugger.logLine('loadDefaults()');
+				if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
+				var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
+				var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
+				for (const setting of Object.keys(DysponentSurowcowy)) {
+					if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
+					if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
+					if (typeof this[setting] == typeof [0,0,0]) {
+						if (this[setting].length != DysponentSurowcowy[setting].length) {
+							throw errorSetting + ' Liczba warto\u015Bci ustawienia: "' + setting + '" jest niew\u0142a\u015Bciwa. ' + adviceMessage; 
+						}
 					}
+					this[setting] = DysponentSurowcowy[setting];
 				}
-				this[setting] = DysponentSurowcowy[setting];
-			}
+			} catch (ex) { Debugger.handle_error(ex); }
 		}
 	};
     const Script = {
@@ -360,8 +365,8 @@ var DysponentSurowcowy = {
 						</tr>
 						<tr>
 							<th colspan="3" style="text-align: center">Kupcy Sumarycznie</th>
-							<th colspan="3" style="text-align: center">Kupcy średnio na wioskę</th>
-							<th colspan="2" style="text-align: center">Pojemność spichlerzy</th>
+							<th colspan="3" style="text-align: center">Kupcy \u015Brednio na wiosk\u0119</th>
+							<th colspan="2" style="text-align: center">Pojemno\u015B\u0107 spichlerzy</th>
 						</tr>
 						<tr>
 							<th style="text-align: center">Dostępni</th>
@@ -442,7 +447,7 @@ var DysponentSurowcowy = {
 
 				const content = document.createElement('div');
 				content.classList.add('content');
-				content.innerText = 'To jest skrypt służący do dystrybuowania surowców między wioskami. Działa on na całej aktywnej grupie przesyłając surowce, aby uzupełnić braki. Może też zapobiegać przelewaniu się spichlerzy. Opracowując plan transportów skrypt przekierowuje je przez pośredników (zamiast A------>C robi A-->B-->C). Kosztem czasowego zamrożenia części surowców i zaangarzowania dodatkowych kupców skraca się znacząco czas transportów. Przy wykonaniu planu skrypt korzysta z funkcjonalności rynku "Wezwij", aby ograniczyć liczbę kliknięć potrzebą do wysłania bardzo wielu transportów. Domyśle wartości ustawień można łatwo zmienić w kodzie skryptu.';
+				content.innerText = 'To jest skrypt służący do dystrybuowania surowców między wioskami. Działa on na całej aktywnej grupie przesyłając surowce, aby uzupełnić braki. Może też zapobiegać przelewaniu się spichlerzy. Opracowując plan transportów skrypt przekierowuje je przez pośredników (zamiast A------>C robi A-->B-->C). Kosztem czasowego zamrożenia części surowców i zaangażowania dodatkowych kupców skraca się znacząco czas transportów. Przy wykonaniu planu skrypt korzysta z funkcjonalności rynku "Wezwij", aby ograniczyć liczbę kliknięć potrzebą do wysłania bardzo wielu transportów. Domyślne wartości ustawień można łatwo zmienić w kodzie skryptu.';
 				info_box.append(content);
 
 				return info_box;
@@ -455,7 +460,7 @@ var DysponentSurowcowy = {
 
 				const content = document.createElement('div');
 				content.classList.add('content');
-				content.innerText = 'Pojawiła się nowa wersja skryptu. Zaleca się ponowne skopiowanie sygnatury ze skryptoteki na Forum Ogólnym, aby uniknąć niekompatybilności pomiędzy wersjami.';
+				content.innerText = 'Pojawi\u0142a si\u0119 nowa wersja skryptu. Zaleca si\u0119 ponowne skopiowanie sygnatury ze skryptoteki na Forum Og\xF3lnym, aby unikn\u0105\u0107 niekompatybilno\u015Bci pomi\u0119dzy wersjami.';
 				error_box.append(content);
 
 				return error_box;
@@ -518,14 +523,14 @@ var DysponentSurowcowy = {
 					}
 				});
 			},
-			create_gui: function () {
+			create_gui: async function () {
 				Debugger.logLine('create_gui()');
-				Settings.loadDefaults();
+				await Settings.loadDefaults();
 				
 				this.options = [
 					{
-						name: 'Wypełniaj do wartości',
-						description: 'Ilości surowców do jakich mają być standardowo wypełniane spichlerze. Główne ustawienie, które rozsyła surowce między wioskami dbając, aby ich dystrybucja na koncie była równomierna i w każdym rejonie były zapasy. Ustawienie tej opcji na więcej niż średnia ilość surowców na wioskę nie ma sensu - skrypt nie wyczaruje surowców z powietrza.',
+						name: 'Wype\u0142niaj do warto\u015Bci',
+						description: 'Ilo\u015Bci surowc\xF3w do jakich maj\u0105 by\u0107 standardowo wype\u0142niane spichlerze. G\u0142\xF3wne ustawienie, kt\xF3re rozsy\u0142a surowce mi\u0119dzy wioskami dbaj\u0105c, aby ich dystrybucja na koncie by\u0142a r\xF3wnomierna i w ka\u017Cdym rejonie by\u0142y zapasy. Ustawienie tej opcji na wi\u0119cej ni\u017C \u015Brednia ilo\u015B\u0107 surowc\xF3w na wiosk\u0119 nie ma sensu - skrypt nie wyczaruje surowc\xF3w z powietrza.',
 						controls: [
 							{ type: 'input', attributes: { id: 'resourcesFillTo_wood',	size: 10, value: Settings.resourcesFillTo[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
 							{ type: 'input', attributes: { id: 'resourcesFillTo_stone',	size: 10, value: Settings.resourcesFillTo[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
@@ -534,7 +539,7 @@ var DysponentSurowcowy = {
 					},
 					{ 
 						name: 'Zabezpieczenie w surowcach',
-						description: 'Ilości surowców, które mają zostać uzupełnione priorytetowo. Najlepiej ustawić na minimum, jakie potrzebuje najbardziej rozwinięta wioska do podtrzymania nieprzerwanej rekrutacji i/lub rozbudowy.',
+						description: 'Ilo\u015Bci surowc\xF3w, kt\xF3re maj\u0105 zosta\u0107 uzupe\u0142nione priorytetowo. Najlepiej ustawi\u0107 na minimum, jakie potrzebuje najbardziej rozwini\u0119ta wioska do podtrzymania nieprzerwanej rekrutacji i/lub rozbudowy.',
 						controls: [
 							{ type: 'input', attributes: { id: 'resourcesSafeguard_wood',	size: 10, value: Settings.resourcesSafeguard[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
 							{ type: 'input', attributes: { id: 'resourcesSafeguard_stone',	size: 10, value: Settings.resourcesSafeguard[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
@@ -543,35 +548,35 @@ var DysponentSurowcowy = {
 					},
 					{
 						name: 'Zabezpieczenie w kupcach',
-						description: 'Liczba kupców, która ma być zostawiona w wioskach. W większości przypadków można zostawić na 0. Ustawienie czasem się przydaje na froncie, kiedy chcemy mieć nieprzerwaną możliwość wysłania szybkiego transportu do świeżo przejętej/odbitej wioski na odbudowę. Także daje nam ciągłą możliwość zrobienia uniku surowcami.',
+						description: 'Liczba kupc\xF3w, kt\xF3ra ma by\u0107 zostawiona w wioskach. W wi\u0119kszo\u015Bci przypadk\xF3w mo\u017Cna zostawi\u0107 na 0. Ustawienie czasem si\u0119 przydaje na froncie, kiedy chcemy mie\u0107 nieprzerwan\u0105 mo\u017Cliwo\u015B\u0107 wys\u0142ania szybkiego transportu do \u015Bwie\u017Co przej\u0119tej/odbitej wioski na odbudow\u0119. Tak\u017Ce daje nam ci\u0105g\u0142\u0105 mo\u017Cliwo\u015B\u0107 zrobienia uniku surowcami.',
 						controls: [
 							{ type: 'input', attributes: { id: 'tradersSafeguard', size: 1, value: Settings.tradersSafeguard }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/market.png' }
 						]
 					},
 					{
-						name: 'Maksymalne wypełnienie spichlerza (%)',
-						description: 'Jeżeli w wiosce jest większe wypełnienie spichlerza, niż zadany procent, to wioska roześle surowce do innych wiosek. Wioski także nie wezwą surowców ponad taki procent pojemności spichlerza, nawet jeśli będzie to oznaczało nie wypełnienie do zadanej w innym ustawieniu wartości.',
+						name: 'Maksymalne wype\u0142nienie spichlerza (%)',
+						description: 'Je\u017Celi w wiosce jest wi\u0119ksze wype\u0142nienie spichlerza, ni\u017C zadany procent, to wioska roze\u015Ble surowce do innych wiosek. Wioski tak\u017Ce nie wezw\u0105 surowc\xF3w ponad taki procent pojemno\u015Bci spichlerza, nawet je\u015Bli b\u0119dzie to oznacza\u0142o nie wype\u0142nienie do zadanej w innym ustawieniu warto\u015Bci.',
 						controls: [
 							{ type: 'input', attributes: { id: 'overFlowThreshold', size: 1, value: Settings.overFlowThreshold }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
 						]
 					},
 					{
-						name: 'Uwzględnianie trwających transportów',
-						description: 'Czy skrypt ma uwzględniać surowce aktualnie transportowane. Uwaga: nie są brane pod uwagę czasy trwających transportów. Surowce w nich traktowane są jako przynależne do wioski docelowej, co może ukryć potrzebę priorytetowego uzupełnienia zabezpieczenia w surowcach.',
+						name: 'Uwzgl\u0119dnianie trwaj\u0105cych transport\xF3w',
+						description: 'Czy skrypt ma uwzgl\u0119dnia\u0107 surowce aktualnie transportowane. Uwaga: nie s\u0105 brane pod uwag\u0119 czasy trwaj\u0105cych transport\xF3w. Surowce w nich traktowane s\u0105 jako przynale\u017Cne do wioski docelowej, co mo\u017Ce ukry\u0107 potrzeb\u0119 priorytetowego uzupe\u0142nienia zabezpieczenia w surowcach.',
 						controls: [
 							{ type: 'input', attributes: { id: 'considerOngoingTransports', type: 'checkbox', checked: Settings.considerOngoingTransports }, img: 'https://dspl.innogamescdn.com/asset/cbd6f76/graphic/btn/time.png' }
 						]
 					},
 					{
 						name: 'Rozszerzona optymalizacja',
-						description: 'Czy plan tansportów może zawierać wioski będące pośrednikami, ale nie przyjmujące surowców dla siebie. Skraca znacząco czasy transportów kosztem dodatkowego klikania przy wysyłaniu transportów.',
+						description: 'Czy plan transport\xF3w mo\u017Ce zawiera\u0107 wioski b\u0119d\u0105ce po\u015Brednikami, ale nie przyjmuj\u0105ce surowc\xF3w dla siebie. Skraca znacz\u0105co czasy transport\xF3w kosztem dodatkowego klikania przy wysy\u0142aniu transport\xF3w.',
 						controls: [
 							{ type: 'input', attributes: { id: 'extendedOptimization', type: 'checkbox', checked: Settings.extendedOptimization }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/premium/features/AccountManager_small.png' }
 						]
 					},
 					{
-						name: 'Minimalne wezwanie surowców',
-						description: 'Wioski, których wezwania surowców nie przekraczają zadanej wartości minimalnej w żadnym z typów surowców, zostaną pominięte w planie. Jeżeli choć jeden z trzech typów surowców przekracza w planie zadaną wartość wezwania do wioski, to wszystkie transporty do tej wioski zostaną wykonane. Przydatne na dużych kontach, aby ograniczyć ilość klikania przy wykonywaniu planu.',
+						name: 'Minimalne wezwanie surowc\xF3w',
+						description: 'Wioski, kt\xF3rych wezwania surowc\xF3w nie przekraczaj\u0105 zadanej warto\u015Bci minimalnej w \u017Cadnym z typ\xF3w surowc\xF3w, zostan\u0105 pomini\u0119te w planie. Je\u017Celi cho\u0107 jeden z trzech typ\xF3w surowc\xF3w przekracza w planie zadan\u0105 warto\u015B\u0107 wezwania do wioski, to wszystkie transporty do tej wioski zostan\u0105 wykonane. Przydatne na du\u017Cych kontach, aby ograniczy\u0107 ilo\u015B\u0107 klikania przy wykonywaniu planu.',
 						controls: [
 							{ type: 'input', attributes: { id: 'minSummon', size: 10, value: Settings.minSummon }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
 						]
@@ -633,7 +638,7 @@ var DysponentSurowcowy = {
 					row.cells[3].innerText.trim().split(' ').map(x => Number(x.replace('.', ''))).forEach((x, i) => {
 						resources[i] = x;
 					});
-					if(resources.length != 3) { throw 'Wczytano złą liczbę rodzajów surowców'; }
+					if(resources.length != 3) { throw 'Wczytano z\u0142\u0105 liczb\u0119 rodzaj\xF3w surowc\xF3w'; }
 					var granary = Number(row.cells[4].innerText);
 					var traders = row.cells[5].innerText.split("/").map(x => Number(x));
 
@@ -719,7 +724,7 @@ var DysponentSurowcowy = {
 					if($(data).find('#paged_view_content > table:nth-child(7) > tbody > tr > td')[0].innerText.split(': ')[1] === '0') {
 						return;
 					}
-					throw 'Wystąpił błąd podczas pobierania danych z przeglądu transportów.';
+					throw 'Wyst\u0105pi\u0142 b\u0142\u0105d podczas pobierania danych z przegl\u0105du transport\xF3w.';
 				}	
 
 				for (var i = 1; i < table.rows.length - 1; i++) {
@@ -738,7 +743,7 @@ var DysponentSurowcowy = {
 						if (icon.title == "Drewno")	{ index = 0; }
 						if (icon.title == "Glina")	{ index = 1; }
 						if (icon.title == "Żelazo")	{ index = 2; }
-						if (index == -1) { throw 'Błąd w rozpoznawaniu surowców w aktywnym transporcie'; }
+						if (index == -1) { throw 'B\u0142\u0105d w rozpoznawaniu surowc\xF3w w aktywnym transporcie'; }
 
 						resources[index] = res;
 					}
@@ -984,7 +989,7 @@ var DysponentSurowcowy = {
 						var transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
-						if(transportVillages.origin === transportVillages.destination) { throw 'ERROR: preventOverFlowing(): origin === destination'; }
+						if(sender === receiver) { throw 'ERROR: preventOverFlowing(): origin === destination'; }
 
 						var l = Script.transportsHandler.addTransport(transports, transportResources, sender, receiver);
 						Script.villagesHandler.updateVillages(transports[l-1], 1);
@@ -1000,7 +1005,7 @@ var DysponentSurowcowy = {
 			},
 			createPlan: function () {
 				Debugger.logLine('createPlan()');
-				UI.SuccessMessage('Dane zostały wczytane. Opracowuję plan transportów...', 10000);
+				UI.SuccessMessage('Dane zosta\u0142y wczytane. Opracowuj\u0119 plan transport\xF3w...', 10000);
 
 				this.fillVillages(Settings.resourcesSafeguard, Script.transportsHandler.priorityTransports);
 
@@ -1042,7 +1047,7 @@ var DysponentSurowcowy = {
 				var p = Script.transportsHandler.priorityTransports;
 				var g = Script.transportsHandler.generalTransports;
 				if (p.length + g.length == 0) {
-					UI.SuccessMessage('Zdaje się, że nic nie potrzeba.', 10000);
+					UI.SuccessMessage('Zdaje si\u0119, \u017Ce nic nie potrzeba.', 10000);
 					return;
 				}
 				var allTransports = [];
@@ -1131,7 +1136,7 @@ var DysponentSurowcowy = {
 
 				this.savePlan();
 
-				UI.SuccessMessage('Plan utworzony. Liczba transportów: ' + allTransports.length, 10000);
+				UI.SuccessMessage('Plan utworzony. Liczba transport\xF3w: ' + allTransports.length, 10000);
 				Script.gui.activate_marketplace_button();
 
 				if (Settings.debug) {
@@ -1487,16 +1492,22 @@ var DysponentSurowcowy = {
 							Script.planExecutor.setVillageAndGroup();
 						} catch (ex) { Debugger.handle_error(ex); }
 					});
+					$('.btn')[1].addEventListener('click', async function () {
+						try {
+							Script.planCreator.savePlan();
+							Script.planExecutor.setVillageAndGroup();
+						} catch (ex) { Debugger.handle_error(ex); }
+					});
 					var progress = Script.plan.summoned / (Script.plan.summoned+Script.plan.summons.length);
 					progress *= 25;
-					progress = Math.ceil(progress);
+					progress = Math.floor(progress);
 					var message = 'Dysponent Surowcowy: '
 					for (var i=1; i<=25; i++) {
 						if (i<=progress) {
-							message += '⬢';
+							message += '\u2B22';
 							continue;
 						}
-						message += '⬡';
+						message += '\u2B21';
 					}
 					UI.SuccessMessage(message, 10000);
 				} else {
@@ -1505,7 +1516,7 @@ var DysponentSurowcowy = {
 							Script.planCreator.savePlan();
 						} catch (ex) { Debugger.handle_error(ex); }
 					});
-					UI.SuccessMessage('Dysponent Surowcowy: To już ostatnie transporty!', 10000);
+					UI.SuccessMessage('Dysponent Surowcowy: To ju\u017C ostatnie transporty!', 10000);
 				}
 			}
 		},
@@ -1544,11 +1555,11 @@ var DysponentSurowcowy = {
 					Script.planExecutor.init();
 					return;
 				} else {
-					UI.ErrorMessage('Dysponent Surowcowy: Uruchom skrypt w zakładce Przeglądy > Produkcja.', 10000);
+					UI.ErrorMessage('Dysponent Surowcowy: Uruchom skrypt w zak\u0142adce Przegl\u0105dy > Produkcja.', 10000);
 					return;
 				}
 			}
-			UI.ErrorMessage('Dysponent Surowcowy: Uruchom skrypt w zakładce Przeglądy > Produkcja lub Rynek > Wezwij.', 10000);
+			UI.ErrorMessage('Dysponent Surowcowy: Uruchom skrypt w zak\u0142adce Przegl\u0105dy > Produkcja lub Rynek > Wezwij.', 10000);
         }
     };
     try { await Script.main(); } catch (ex) { Debugger.handle_error(ex); }
