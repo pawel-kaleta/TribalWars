@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.4.1 (beta)
+//	version:	2.0.4.2 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -41,6 +41,8 @@ javascript:
 //			> added plan age verification
 //			> added plan age label
 //			> added some more debug logging
+//		2.0.4.2 - 24 by PabloCanaletto
+//			> bug fix - loadPlan() was returning true if plan was outdated
 
 /*
 var DysponentSurowcowy = {
@@ -58,7 +60,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.4.1 (beta)';
+	const version = 'v2.0.4.2 (beta)';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -1488,6 +1490,7 @@ var DysponentSurowcowy = {
 				if (Date.now() - Script.plan.timestamp > 1800000) {
 					Script.plan = {};
 					localStorage.removeItem(namespace);
+					return false;
 				}
 				return true;
 			},
