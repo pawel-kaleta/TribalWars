@@ -34,20 +34,24 @@ javascript:
 //			> added Debug Log for customer support
 //			> bug fix - added normalization of allTransports
 //			> logging extention
-//		2.0.4.1 - 23.01.2021 by PabloCanaletto
+//		2.0.4.1 - 24.01.2021 by PabloCanaletto
 //			> character escapes
-//			> bug fix - wrong reference in preventOverflowing
+//			> bug fix - wrong reference: (!eg) insted of (type of eg === null) in fillVillages and preventOverflowing
+//			> bug fix - create_gui() out of error handling
+//			> added plan age verification
+//			> added plan age label
+//			> added some more debug logging
 
 /*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYSLNE
-	resourcesFillTo: [45000, 50000, 50000],		// wypełniaj do tej wartości
-	resourcesSafeguard: [10000, 10000, 10000],	// zabezpieczenie w surowcach, wypelniane priorytetowo
+	resourcesFillTo: [50000, 55000, 55000],		// wypełniaj do tej wartości
+	resourcesSafeguard: [20000, 20000, 20000],	// zabezpieczenie w surowcach, wypelniane priorytetowo
 	tradersSafeguard: 0,						// zabezpieczenie w kupcach
 	considerOngoingTransports: true,			// uwzglednij przychodzace transporty (tak - true, nie - false)
 	overFlowThreshold: 75,						// % pojemnosci spichlerza, powyzej ktorego zapobiegaj przelewaniu sie
 	extendedOptimization: true,					// czy optymalizacja moze generowac dodatkowych odbiorcow (wiecej klikania)
-	minSummon: 0,
+	minSummon: 0,								// minimalne wezwanie
 	debug: true
 };
 */
@@ -118,8 +122,8 @@ var DysponentSurowcowy = {
 				if (number >= 1000) {
 					number /= 1000;
 				} else {
-					if (i === 0)
-						return number.toFixed(1);
+					//if (i === 0)
+					//	return number.toFixed(1);
 					let fraction = 2;
 					if (number >= 10)
 						fraction = 1;
@@ -142,23 +146,21 @@ var DysponentSurowcowy = {
 		sitter: 					'',
 		debug: 						false,
 		isNewerVersion: function () { return typeof DysponentSurowcowy == 'undefined' && typeof settings != "undefined"; },
-		loadDefaults: async function () {
-			try {
-				Debugger.logLine('loadDefaults()');
-				if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
-				var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
-				var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
-				for (const setting of Object.keys(DysponentSurowcowy)) {
-					if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
-					if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
-					if (typeof this[setting] == typeof [0,0,0]) {
-						if (this[setting].length != DysponentSurowcowy[setting].length) {
-							throw errorSetting + ' Liczba warto\u015Bci ustawienia: "' + setting + '" jest niew\u0142a\u015Bciwa. ' + adviceMessage; 
-						}
+		loadDefaults: function () {
+			Debugger.logLine('loadDefaults()');
+			if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
+			var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
+			var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
+			for (const setting of Object.keys(DysponentSurowcowy)) {
+				if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
+				if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
+				if (typeof this[setting] == typeof [0,0,0]) {
+					if (this[setting].length != DysponentSurowcowy[setting].length) {
+						throw errorSetting + ' Liczba warto\u015Bci ustawienia: "' + setting + '" jest niew\u0142a\u015Bciwa. ' + adviceMessage; 
 					}
-					this[setting] = DysponentSurowcowy[setting];
 				}
-			} catch (ex) { Debugger.handle_error(ex); }
+				this[setting] = DysponentSurowcowy[setting];
+			}
 		}
 	};
     const Script = {
@@ -196,6 +198,8 @@ var DysponentSurowcowy = {
 				return cell;
 			},
 			create_option_header: function (option) {
+				Debugger.logLine('create_option_header()');
+
 				const option_title_row = document.createElement('tr');
 				const option_title_cell = document.createElement('th');
 				option_title_cell.setAttribute('colspan', 2);
@@ -206,10 +210,10 @@ var DysponentSurowcowy = {
 			},
 			add_option_to_panel: function (option, table) {
 				Debugger.logLine('add_option_to_panel(' + option.name + ')');
+
 				table.append(this.create_option_header(option));
 
 				const option_content_row = document.createElement('tr');
-
 				option_content_row.append(this.create_option_input(option));
 
 				const option_content_descryption = document.createElement('td');
@@ -379,9 +383,9 @@ var DysponentSurowcowy = {
 							<th style="text-align: center">Średnia</th>
 						</tr>
 						<tr class="row_b">
-							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_in)}</td>
-							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_out)}</td>
-							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_sum_all)}</td>
+							<td style="text-align: center">${panel_data.trad_sum_in}</td>
+							<td style="text-align: center">${panel_data.trad_sum_out}</td>
+							<td style="text-align: center">${panel_data.trad_sum_all}</td>
 							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_in)}</td>
 							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_out)}</td>
 							<td style="text-align: center">${Utilities.beautifyNumber(panel_data.trad_avg_all)}</td>
@@ -395,6 +399,7 @@ var DysponentSurowcowy = {
 			},
 			create_header: function () {
 				Debugger.logLine('create_header()');
+
 				const div_main = document.createElement('div');
 				div_main.style.margin = '5px 5px 10px 5px';
 
@@ -424,6 +429,7 @@ var DysponentSurowcowy = {
 			},
 			create_footer: function () {
 				Debugger.logLine('create_footer()');
+
 				const footer = document.createElement('div');
 				footer.style.margin = '15px 5px 5px 5px';
 
@@ -441,19 +447,21 @@ var DysponentSurowcowy = {
 			},
 			create_script_description: function () {
 				Debugger.logLine('create_script_description()');
+
 				const info_box = document.createElement('div');
 				info_box.classList.add('info_box');
 				info_box.style.margin = '5px 5px 5px 5px';
 
 				const content = document.createElement('div');
 				content.classList.add('content');
-				content.innerText = 'To jest skrypt służący do dystrybuowania surowców między wioskami. Działa on na całej aktywnej grupie przesyłając surowce, aby uzupełnić braki. Może też zapobiegać przelewaniu się spichlerzy. Opracowując plan transportów skrypt przekierowuje je przez pośredników (zamiast A------>C robi A-->B-->C). Kosztem czasowego zamrożenia części surowców i zaangażowania dodatkowych kupców skraca się znacząco czas transportów. Przy wykonaniu planu skrypt korzysta z funkcjonalności rynku "Wezwij", aby ograniczyć liczbę kliknięć potrzebą do wysłania bardzo wielu transportów. Domyślne wartości ustawień można łatwo zmienić w kodzie skryptu.';
+				content.innerText = 'To jest skrypt s\u0142u\u017C\u0105cy do dystrybuowania surowc\xF3w mi\u0119dzy wioskami. Dzia\u0142a on na ca\u0142ej aktywnej grupie przesy\u0142aj\u0105c surowce, aby uzupe\u0142ni\u0107 braki. Mo\u017Ce te\u017C zapobiega\u0107 przelewaniu si\u0119 spichlerzy. Opracowuj\u0105c plan transport\xF3w skrypt przekierowuje je przez po\u015Brednik\xF3w (zamiast A------>C robi A-->B-->C). Kosztem czasowego zamro\u017Cenia cz\u0119\u015Bci surowc\xF3w i zaanga\u017Cowania dodatkowych kupc\xF3w skraca si\u0119 znacz\u0105co czas transport\xF3w. Przy wykonaniu planu skrypt korzysta z funkcjonalno\u015Bci rynku "Wezwij", aby ograniczy\u0107 liczb\u0119 klikni\u0119\u0107 potrzeb\u0105 do wys\u0142ania bardzo wielu transport\xF3w. Domy\u015Blne warto\u015Bci ustawie\u0144 mo\u017Cna \u0142atwo zmieni\u0107 w kodzie skryptu.';
 				info_box.append(content);
 
 				return info_box;
 			},
 			create_warning: function () {
 				Debugger.logLine('create_warning()');
+
 				const error_box = document.createElement('div');
 				error_box.classList.add('error_box');
 				error_box.style.margin = '5px 5px 5px 5px';
@@ -467,6 +475,7 @@ var DysponentSurowcowy = {
 			},
 			create_submition_panel: function () {
 				Debugger.logLine('create_submition_panel()');
+
 				const submition_panel = document.createElement('div');
 
 				const submit_button = document.createElement('input');
@@ -482,17 +491,33 @@ var DysponentSurowcowy = {
 				marketplace_button.setAttribute('value', 'Wykonaj Plan');
 				marketplace_button.setAttribute('type', 'button');
 				marketplace_button.classList.add('btn');
+				submition_panel.append(marketplace_button);
 				if (!Script.planExecutor.loadPlan()) {
 					marketplace_button.classList.add('btn-disabled');
 				} else {
 					marketplace_button.addEventListener('click', async function () { try { await Script.planExecutor.init(); } catch (ex) { Debugger.handle_error(ex); } });
+					const plan_date = document.createElement('label');
+					plan_date.setAttribute('id', 'plan_date');
+					plan_date.style.display = 'inline';
+					var time = new Date(Date.now() - Script.plan.timestamp);
+					time = time.getMinutes();
+					var inflection = '';
+					if (time==1) { inflection = 'minutę'; }
+					else {
+						var x = time;
+						while (x>=10) { x -= 10; }
+						if (2<=x && x<=4) { inflection = 'minuty'; }
+						else { inflection = 'minut'; }
+					}
+					plan_date.innerHTML = 'Plan utworzony <strong>' + time + '</strong> ' + inflection + ' temu.';
+					submition_panel.append(plan_date);
 				}
-				submition_panel.append(marketplace_button);
-
+				
 				return submition_panel;
 			},
 			load_settings: function () {
 				Debugger.logLine('load_settings()');
+
 				for (option of this.options) {
 					var setting;
 					if (option.controls.length == 1) {
@@ -502,105 +527,112 @@ var DysponentSurowcowy = {
 						}
 						else {
 							setting = Number($('#'+option.controls[0].attributes.id)[0].value);
-							if (setting == NaN || setting < 0) { throw 'Niewłaściwa wartość ustawienia "' + option.controls[0].attributes.id +'".' }
+							if (setting == NaN || setting < 0) { throw 'Niew\u0142a\u015Bciwa warto\u015B\u0107 ustawienia "' + option.controls[0].attributes.id +'".' }
 						}
 					}
 					else {
 						setting = Settings[option.controls[0].attributes.id.split("_")[0]];
 						for (var i=0; i<3; i++) {
 							setting[i] = Number($('#'+option.controls[i].attributes.id)[0].value);
-							if (setting[i] == NaN || setting[i] < 0 || setting[i] > 700000) { throw 'Niewłaściwa wartość ustawienia "' + option.controls[0].attributes.id +'".' }
+							if (setting[i] == NaN || setting[i] < 0 || setting[i] > 700000) { throw 'Niew\u0142a\u015Bciwa warto\u015B\u0107 ustawienia "' + option.controls[0].attributes.id +'".' }
 						}
 					}
 				}
 				if (Settings.overFlowThreshold > 100) { Settings.overFlowThreshold = 100; }
 			},
 			activate_marketplace_button: function () {
+				Debugger.logLine('activate_marketplace_button()');
+
 				$('#marketplace_button')[0].classList.forEach((x) => {
 					if (x == 'btn-disabled') {
 						$('#marketplace_button')[0].classList.remove('btn-disabled');
 						$('#marketplace_button')[0].addEventListener('click', async function () { try { await Script.planExecutor.init(); } catch (ex) { Debugger.handle_error(ex); } });
 					}
 				});
+				if($('#plan_date')[0]) { $('#plan_date')[0].innerHTML = 'W\u0142a\u015Bnie utworzy\u0142e\u015B plan!';	}
 			},
 			create_gui: async function () {
-				Debugger.logLine('create_gui()');
-				await Settings.loadDefaults();
-				
-				this.options = [
-					{
-						name: 'Wype\u0142niaj do warto\u015Bci',
-						description: 'Ilo\u015Bci surowc\xF3w do jakich maj\u0105 by\u0107 standardowo wype\u0142niane spichlerze. G\u0142\xF3wne ustawienie, kt\xF3re rozsy\u0142a surowce mi\u0119dzy wioskami dbaj\u0105c, aby ich dystrybucja na koncie by\u0142a r\xF3wnomierna i w ka\u017Cdym rejonie by\u0142y zapasy. Ustawienie tej opcji na wi\u0119cej ni\u017C \u015Brednia ilo\u015B\u0107 surowc\xF3w na wiosk\u0119 nie ma sensu - skrypt nie wyczaruje surowc\xF3w z powietrza.',
-						controls: [
-							{ type: 'input', attributes: { id: 'resourcesFillTo_wood',	size: 10, value: Settings.resourcesFillTo[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
-							{ type: 'input', attributes: { id: 'resourcesFillTo_stone',	size: 10, value: Settings.resourcesFillTo[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
-							{ type: 'input', attributes: { id: 'resourcesFillTo_iron',	size: 10, value: Settings.resourcesFillTo[2] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/eisen.png' }
-						]
-					},
-					{ 
-						name: 'Zabezpieczenie w surowcach',
-						description: 'Ilo\u015Bci surowc\xF3w, kt\xF3re maj\u0105 zosta\u0107 uzupe\u0142nione priorytetowo. Najlepiej ustawi\u0107 na minimum, jakie potrzebuje najbardziej rozwini\u0119ta wioska do podtrzymania nieprzerwanej rekrutacji i/lub rozbudowy.',
-						controls: [
-							{ type: 'input', attributes: { id: 'resourcesSafeguard_wood',	size: 10, value: Settings.resourcesSafeguard[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
-							{ type: 'input', attributes: { id: 'resourcesSafeguard_stone',	size: 10, value: Settings.resourcesSafeguard[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
-							{ type: 'input', attributes: { id: 'resourcesSafeguard_iron',	size: 10, value: Settings.resourcesSafeguard[2] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/eisen.png' }
-						]
-					},
-					{
-						name: 'Zabezpieczenie w kupcach',
-						description: 'Liczba kupc\xF3w, kt\xF3ra ma by\u0107 zostawiona w wioskach. W wi\u0119kszo\u015Bci przypadk\xF3w mo\u017Cna zostawi\u0107 na 0. Ustawienie czasem si\u0119 przydaje na froncie, kiedy chcemy mie\u0107 nieprzerwan\u0105 mo\u017Cliwo\u015B\u0107 wys\u0142ania szybkiego transportu do \u015Bwie\u017Co przej\u0119tej/odbitej wioski na odbudow\u0119. Tak\u017Ce daje nam ci\u0105g\u0142\u0105 mo\u017Cliwo\u015B\u0107 zrobienia uniku surowcami.',
-						controls: [
-							{ type: 'input', attributes: { id: 'tradersSafeguard', size: 1, value: Settings.tradersSafeguard }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/market.png' }
-						]
-					},
-					{
-						name: 'Maksymalne wype\u0142nienie spichlerza (%)',
-						description: 'Je\u017Celi w wiosce jest wi\u0119ksze wype\u0142nienie spichlerza, ni\u017C zadany procent, to wioska roze\u015Ble surowce do innych wiosek. Wioski tak\u017Ce nie wezw\u0105 surowc\xF3w ponad taki procent pojemno\u015Bci spichlerza, nawet je\u015Bli b\u0119dzie to oznacza\u0142o nie wype\u0142nienie do zadanej w innym ustawieniu warto\u015Bci.',
-						controls: [
-							{ type: 'input', attributes: { id: 'overFlowThreshold', size: 1, value: Settings.overFlowThreshold }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
-						]
-					},
-					{
-						name: 'Uwzgl\u0119dnianie trwaj\u0105cych transport\xF3w',
-						description: 'Czy skrypt ma uwzgl\u0119dnia\u0107 surowce aktualnie transportowane. Uwaga: nie s\u0105 brane pod uwag\u0119 czasy trwaj\u0105cych transport\xF3w. Surowce w nich traktowane s\u0105 jako przynale\u017Cne do wioski docelowej, co mo\u017Ce ukry\u0107 potrzeb\u0119 priorytetowego uzupe\u0142nienia zabezpieczenia w surowcach.',
-						controls: [
-							{ type: 'input', attributes: { id: 'considerOngoingTransports', type: 'checkbox', checked: Settings.considerOngoingTransports }, img: 'https://dspl.innogamescdn.com/asset/cbd6f76/graphic/btn/time.png' }
-						]
-					},
-					{
-						name: 'Rozszerzona optymalizacja',
-						description: 'Czy plan transport\xF3w mo\u017Ce zawiera\u0107 wioski b\u0119d\u0105ce po\u015Brednikami, ale nie przyjmuj\u0105ce surowc\xF3w dla siebie. Skraca znacz\u0105co czasy transport\xF3w kosztem dodatkowego klikania przy wysy\u0142aniu transport\xF3w.',
-						controls: [
-							{ type: 'input', attributes: { id: 'extendedOptimization', type: 'checkbox', checked: Settings.extendedOptimization }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/premium/features/AccountManager_small.png' }
-						]
-					},
-					{
-						name: 'Minimalne wezwanie surowc\xF3w',
-						description: 'Wioski, kt\xF3rych wezwania surowc\xF3w nie przekraczaj\u0105 zadanej warto\u015Bci minimalnej w \u017Cadnym z typ\xF3w surowc\xF3w, zostan\u0105 pomini\u0119te w planie. Je\u017Celi cho\u0107 jeden z trzech typ\xF3w surowc\xF3w przekracza w planie zadan\u0105 warto\u015B\u0107 wezwania do wioski, to wszystkie transporty do tej wioski zostan\u0105 wykonane. Przydatne na du\u017Cych kontach, aby ograniczy\u0107 ilo\u015B\u0107 klikania przy wykonywaniu planu.',
-						controls: [
-							{ type: 'input', attributes: { id: 'minSummon', size: 10, value: Settings.minSummon }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
-						]
-					}
-				];
+				try {
+					Debugger.logLine('create_gui()');
+					Settings.loadDefaults();
+					
+					this.options = [
+						{
+							name: 'Wype\u0142niaj do warto\u015Bci',
+							description: 'Ilo\u015Bci surowc\xF3w do jakich maj\u0105 by\u0107 standardowo wype\u0142niane spichlerze. G\u0142\xF3wne ustawienie, kt\xF3re rozsy\u0142a surowce mi\u0119dzy wioskami dbaj\u0105c, aby ich dystrybucja na koncie by\u0142a r\xF3wnomierna i w ka\u017Cdym rejonie by\u0142y zapasy. Ustawienie tej opcji na wi\u0119cej ni\u017C \u015Brednia ilo\u015B\u0107 surowc\xF3w na wiosk\u0119 nie ma sensu - skrypt nie wyczaruje surowc\xF3w z powietrza.',
+							controls: [
+								{ type: 'input', attributes: { id: 'resourcesFillTo_wood',	size: 10, value: Settings.resourcesFillTo[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
+								{ type: 'input', attributes: { id: 'resourcesFillTo_stone',	size: 10, value: Settings.resourcesFillTo[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
+								{ type: 'input', attributes: { id: 'resourcesFillTo_iron',	size: 10, value: Settings.resourcesFillTo[2] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/eisen.png' }
+							]
+						},
+						{ 
+							name: 'Zabezpieczenie w surowcach',
+							description: 'Ilo\u015Bci surowc\xF3w, kt\xF3re maj\u0105 zosta\u0107 uzupe\u0142nione priorytetowo. Najlepiej ustawi\u0107 na minimum, jakie potrzebuje najbardziej rozwini\u0119ta wioska do podtrzymania nieprzerwanej rekrutacji i/lub rozbudowy.',
+							controls: [
+								{ type: 'input', attributes: { id: 'resourcesSafeguard_wood',	size: 10, value: Settings.resourcesSafeguard[0] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/holz.png' },
+								{ type: 'input', attributes: { id: 'resourcesSafeguard_stone',	size: 10, value: Settings.resourcesSafeguard[1] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/lehm.png' },
+								{ type: 'input', attributes: { id: 'resourcesSafeguard_iron',	size: 10, value: Settings.resourcesSafeguard[2] }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/eisen.png' }
+							]
+						},
+						{
+							name: 'Zabezpieczenie w kupcach',
+							description: 'Liczba kupc\xF3w, kt\xF3ra ma by\u0107 zostawiona w wioskach. W wi\u0119kszo\u015Bci przypadk\xF3w mo\u017Cna zostawi\u0107 na 0. Ustawienie czasem si\u0119 przydaje na froncie, kiedy chcemy mie\u0107 nieprzerwan\u0105 mo\u017Cliwo\u015B\u0107 wys\u0142ania szybkiego transportu do \u015Bwie\u017Co przej\u0119tej/odbitej wioski na odbudow\u0119. Tak\u017Ce daje nam ci\u0105g\u0142\u0105 mo\u017Cliwo\u015B\u0107 zrobienia uniku surowcami.',
+							controls: [
+								{ type: 'input', attributes: { id: 'tradersSafeguard', size: 1, value: Settings.tradersSafeguard }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/market.png' }
+							]
+						},
+						{
+							name: 'Maksymalne wype\u0142nienie spichlerza (%)',
+							description: 'Je\u017Celi w wiosce jest wi\u0119ksze wype\u0142nienie spichlerza, ni\u017C zadany procent, to wioska roze\u015Ble surowce do innych wiosek. Wioski tak\u017Ce nie wezw\u0105 surowc\xF3w ponad taki procent pojemno\u015Bci spichlerza, nawet je\u015Bli b\u0119dzie to oznacza\u0142o nie wype\u0142nienie do zadanej w innym ustawieniu warto\u015Bci.',
+							controls: [
+								{ type: 'input', attributes: { id: 'overFlowThreshold', size: 1, value: Settings.overFlowThreshold }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
+							]
+						},
+						{
+							name: 'Uwzgl\u0119dnianie trwaj\u0105cych transport\xF3w',
+							description: 'Czy skrypt ma uwzgl\u0119dnia\u0107 surowce aktualnie transportowane. Uwaga: nie s\u0105 brane pod uwag\u0119 czasy trwaj\u0105cych transport\xF3w. Surowce w nich traktowane s\u0105 jako przynale\u017Cne do wioski docelowej, co mo\u017Ce ukry\u0107 potrzeb\u0119 priorytetowego uzupe\u0142nienia zabezpieczenia w surowcach.',
+							controls: [
+								{ type: 'input', attributes: { id: 'considerOngoingTransports', type: 'checkbox', checked: Settings.considerOngoingTransports }, img: 'https://dspl.innogamescdn.com/asset/cbd6f76/graphic/btn/time.png' }
+							]
+						},
+						{
+							name: 'Rozszerzona optymalizacja',
+							description: 'Czy plan transport\xF3w mo\u017Ce zawiera\u0107 wioski b\u0119d\u0105ce po\u015Brednikami, ale nie przyjmuj\u0105ce surowc\xF3w dla siebie. Skraca znacz\u0105co czasy transport\xF3w kosztem dodatkowego klikania przy wysy\u0142aniu transport\xF3w.',
+							controls: [
+								{ type: 'input', attributes: { id: 'extendedOptimization', type: 'checkbox', checked: Settings.extendedOptimization }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/premium/features/AccountManager_small.png' }
+							]
+						},
+						{
+							name: 'Minimalne wezwanie surowc\xF3w',
+							description: 'Wioski, kt\xF3rych wezwania surowc\xF3w nie przekraczaj\u0105 zadanej warto\u015Bci minimalnej w \u017Cadnym z typ\xF3w surowc\xF3w, zostan\u0105 pomini\u0119te w planie. Je\u017Celi cho\u0107 jeden z trzech typ\xF3w surowc\xF3w przekracza w planie zadan\u0105 warto\u015B\u0107 wezwania do wioski, to wszystkie transporty do tej wioski zostan\u0105 wykonane. Przydatne na du\u017Cych kontach, aby ograniczy\u0107 ilo\u015B\u0107 klikania przy wykonywaniu planu.',
+							controls: [
+								{ type: 'input', attributes: { id: 'minSummon', size: 10, value: Settings.minSummon }, img: 'https://dspl.innogamescdn.com/asset/6052b745/graphic/buildings/storage.png' }
+							]
+						}
+					];
 
-				const div = document.createElement('div');
-				div.style.margin = '0px 0px 10px 0px';
-				div.setAttribute('id', namespace);
-				div.classList.add('vis', 'vis_item');
-				div.append(this.create_header());
-				div.append(this.create_script_description());
-				if (Settings.isNewerVersion()) { div.append(this.create_warning()); }
-				div.append(this.create_stats_panel());
-				div.append(this.create_main_panel());
-				div.append(this.create_submition_panel());
-				div.append(this.create_footer());
+					const div = document.createElement('div');
+					div.style.margin = '0px 0px 10px 0px';
+					div.setAttribute('id', namespace);
+					div.classList.add('vis', 'vis_item');
+					div.append(this.create_header());
+					div.append(this.create_script_description());
+					if (Settings.isNewerVersion()) { div.append(this.create_warning()); }
+					div.append(this.create_stats_panel());
+					div.append(this.create_main_panel());
+					div.append(this.create_submition_panel());
+					div.append(this.create_footer());
 
-				document.querySelector('#content_value').prepend(div);
+					$('#content_value')[0].prepend(div);
+				} catch (ex) { Debugger.handle_error(ex); }
 			}
 		},
 		villagesHandler: {
 			villages: [],
 			addVillage: function (_coords, _ID, _resources, _granary, _traders) {
+				Debugger.logLine('addVillage()');
+
 				this.villages.push({
 					coords: {
 						x: _coords[0],
@@ -625,6 +657,7 @@ var DysponentSurowcowy = {
 			},
 			getBaseData: function (data) {
 				Debugger.logLine('getBaseData()');
+
 				var table = $(data).find('#production_table')[0];
 				for (var i = 1; i < table.rows.length; i++) {
 					var row = table.rows[i];
@@ -646,6 +679,8 @@ var DysponentSurowcowy = {
 				}
 			},
 			updateVillages: function (transport, plus_minus_1) {
+				Debugger.logLine('updateVillages()');
+
 				let origin 		= transport.origin;
 				let destination	= transport.destination;
 				destination.receiver = false;
@@ -692,6 +727,8 @@ var DysponentSurowcowy = {
 			priorityTransports: [],
 			generalTransports: [],
 			addTransport: function (_transports, _resources, _origin, _destination) {
+				Debugger.logLine('addTransport()');
+
 				return _transports.push({
 					resources: _resources,
 					traders: (_resources[0] + _resources[1] + _resources[2]) / 1000,
@@ -713,12 +750,16 @@ var DysponentSurowcowy = {
 			transportCost: function (transport) { return transport.traders * transport.distance * transport.distance;
 			},
 			reduceTransport: function (resources, transport) {
+				Debugger.logLine('reduceTransport()');
+
 				Script.villagesHandler.updateVillages(transport, -1);
 				transport.traders -= (resources[0] + resources[1] + resources[2]) / 1000;
 				for (var k=0; k<3; k++) { transport.resources[k] -= resources[k]; }
 				Script.villagesHandler.updateVillages(transport, 1);
 			},
 			getOngoingTransports: function (data) {
+				Debugger.logLine('getOngoingTransports()');
+
 				let table = $(data).find('#trades_table').get()[0];
 				if (!table) { 
 					if($(data).find('#paged_view_content > table:nth-child(7) > tbody > tr > td')[0].innerText.split(': ')[1] === '0') {
@@ -818,7 +859,7 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (!receiver || typeof(res) === null) { throw 'ERROR: fillVillages(): no receiver or no res'; }
+					if (typeof receiver === null || typeof res === null) { throw 'ERROR: fillVillages(): no receiver or no res'; }
 
 					compareVillages.refCoords = receiver.coords;
 					compareVillages.noReverse = 1;
@@ -895,12 +936,11 @@ var DysponentSurowcowy = {
 
 				if (createdTransport) {
 					Script.planOptimizer.normalization.init(transports);
-					return true;
 				}
-				return false;
 			},
 			preventOverflowing: function (resoucesTargetLevel, transports) {
 				Debugger.logLine("preventOverflowing()");
+
 				let villages = Script.villagesHandler.villages;
 				let compareVillages = Script.villagesHandler.compareVillages;
 
@@ -953,7 +993,7 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (!sender || !res) { throw 'ERROR: preventOverflowing(): no sender or no res'; }
+					if (typeof sender === null || typeof res === null) { throw 'ERROR: preventOverflowing(): no sender or no res'; }
 
 					var overFlow = sender.resources.owned[res];
 					overFlow -= sender.granary * resoucesTargetLevel / 100;
@@ -1005,6 +1045,7 @@ var DysponentSurowcowy = {
 			},
 			createPlan: function () {
 				Debugger.logLine('createPlan()');
+
 				UI.SuccessMessage('Dane zosta\u0142y wczytane. Opracowuj\u0119 plan transport\xF3w...', 10000);
 
 				this.fillVillages(Settings.resourcesSafeguard, Script.transportsHandler.priorityTransports);
@@ -1015,9 +1056,8 @@ var DysponentSurowcowy = {
 
 					var counter_4 = 0;
 					let increase = false;
-					let createdTransport = false;
 					do {
-						createdTransport = this.fillVillages(resTarget, Script.transportsHandler.generalTransports);
+						this.fillVillages(resTarget, Script.transportsHandler.generalTransports);
 						if(counter_4++ > 750) { throw 'ERROR: createPlan(): while is infinite'; }
 						increase = false;
 						for (var i=0; i<3; i++) {
@@ -1029,20 +1069,11 @@ var DysponentSurowcowy = {
 								}
 							}
 						}
-					} while (increase && createdTransport)
+					} while (increase)
 				}
-				else
-				{
-					this.fillVillages(Settings.resourcesFillTo, Script.transportsHandler.generalTransports);
-				}
-
-				if (Settings.overFlowThreshold < 100) {
-					this.preventOverflowing(Settings.overFlowThreshold, Script.transportsHandler.generalTransports);
-				}
-
-				if (Script.transportsHandler.generalTransports.length > 0) {
-					Script.planOptimizer.optimization.init();
-				}
+				else { this.fillVillages(Settings.resourcesFillTo, Script.transportsHandler.generalTransports); }
+				if (Settings.overFlowThreshold < 100) { this.preventOverflowing(Settings.overFlowThreshold, Script.transportsHandler.generalTransports); }
+				if (Script.transportsHandler.generalTransports.length > 0) { Script.planOptimizer.optimization.init(); }
 
 				var p = Script.transportsHandler.priorityTransports;
 				var g = Script.transportsHandler.generalTransports;
@@ -1062,8 +1093,6 @@ var DysponentSurowcowy = {
 					group: Script.planCreator.loadGroup(),
 					summons: []
 				};
-
-				//Debugger.logLine(allTransports);
 
 				for (var i=0; i<allTransports.length; i++) {
 					var summon = null;
@@ -1121,7 +1150,7 @@ var DysponentSurowcowy = {
 				}
 
 				Debugger.logLine("plan utworzony:");
-				//Debugger.logLine(Script.plan);
+
 				for (var i=0; i<Script.plan.summons.length; i++) {
 					var summon = Script.plan.summons[i];
 					var res = [0,0,0];
@@ -1144,6 +1173,8 @@ var DysponentSurowcowy = {
 				}
 			},
 			loadGroup: function () {
+				Debugger.logLine('loadGroup()');
+
 				var groups = $('.group-menu-item');
 				for (var i=0; i<groups.length; i++) {
 					if (groups[i].nodename == 'strong') {
@@ -1153,6 +1184,8 @@ var DysponentSurowcowy = {
 				return null;
 			},
 			savePlan: function () {
+				Debugger.logLine('savePlan()');
+
 				localStorage.removeItem(namespace);
 				if (!Script.plan.summons[0]) { return; }
 				var planJSON = JSON.stringify(Script.plan);
@@ -1160,6 +1193,7 @@ var DysponentSurowcowy = {
 			},
 			init: async function () {
 				Debugger.logLine("planCreator.init()");
+
 				Script.gui.load_settings();
 
 				Settings.resourcesRelayBuffer = [0,0,0];
@@ -1194,6 +1228,7 @@ var DysponentSurowcowy = {
 			normalization: {
 				reduceSums: function (transports) {
 					Debugger.logLine("reduceSums()");
+
 					for (var i=0; i<transports.length-1; i++) {
 						for (var j=i+1; j<transports.length; j++) {
 							if (transports[i].origin == transports[j].destination) { continue; }
@@ -1233,6 +1268,7 @@ var DysponentSurowcowy = {
 				},
 				merge: function (transports) {
 					Debugger.logLine("merge()");
+
 					transports.sort(Script.transportsHandler.compareTransports.route);
 
 					function if_same_route(tA, tB) {
@@ -1267,6 +1303,7 @@ var DysponentSurowcowy = {
 				},
 				reduceOpposing: function (transports) {
 					Debugger.logLine("reduceOpposing()");
+
 					function if_opposinge_route(tA, tB) {
 						if (tA.destination.ID	!= tB.origin.ID)	{ return false; }
 						if (tA.origin.ID		!= tB.destination.ID)		{ return false; }
@@ -1292,6 +1329,7 @@ var DysponentSurowcowy = {
 				},
 				removeEmptys: function (transports) {
 					Debugger.logLine("removeEmptys()");
+
 					var counter_1 = 0;
 					for (var i=0; i<transports.length; i++) {
 						if(counter_1++ > 1000) { throw 'ERROR: removeEmptys(): for_1 is infinite'; }
@@ -1305,6 +1343,7 @@ var DysponentSurowcowy = {
 				},
 				init: function (transports) {
 					Debugger.logLine("normalization.init()");
+
 					if (transports.length < 2) { return; }
 					this.reduceSums(transports);
 					this.merge(transports);
@@ -1315,6 +1354,7 @@ var DysponentSurowcowy = {
 			optimization: {
 				removeSuboptimalBrokers () {
 					Debugger.logLine("removeSuboptimalBrokers()");
+
 					var transports = Script.transportsHandler.generalTransports;
 
 					var newTransport = false;
@@ -1349,6 +1389,7 @@ var DysponentSurowcowy = {
 				},
 				relayThroughBrokers () {
 					Debugger.logLine("relayThrougBrokers()");
+
 					var villages = Script.villagesHandler.villages;
 					var transports = Script.transportsHandler.generalTransports;
 					if (transports.length == 0) { return; }
@@ -1431,6 +1472,8 @@ var DysponentSurowcowy = {
 					if (newTransport) {	Script.planOptimizer.normalization.init(transports); }
 				},
 				init: function () {
+					Debugger.logLine('optimization.init()');
+
 					this.removeSuboptimalBrokers();
 					this.relayThroughBrokers();
 				}
@@ -1439,12 +1482,18 @@ var DysponentSurowcowy = {
 		planExecutor: {
 			loadPlan: function () {
 				Debugger.logLine('loadPlan()');
+
 				Script.plan = JSON.parse(localStorage.getItem(namespace));
 				if (Script.plan === null) { return false; }
+				if (Date.now() - Script.plan.timestamp > 1800000) {
+					Script.plan = {};
+					localStorage.removeItem(namespace);
+				}
 				return true;
 			},
 			setVillageAndGroup: function () {
 				Debugger.logLine('setVillageAndGroup()');
+
 				function reload() {
 					Debugger.logLine('reload()');
 					var url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination;
@@ -1462,12 +1511,12 @@ var DysponentSurowcowy = {
 				return false;
 			},
 			init: async function () {
+				Debugger.logLine('planExecutor.init()');
+
 				if(this.setVillageAndGroup()) { return; }
 
 				var summon = Script.plan.summons[0];
-
 				var inputs = $('#village_list tbody tr td input');
-				//Debugger.logLine(summon.destination);
 
 				for (var i=0; i<summon.transports.length; i++) {
 					for (var j=0; j<inputs.length; j++) {
@@ -1522,6 +1571,7 @@ var DysponentSurowcowy = {
 		},
         main: async function () {
 			Debugger.logLine('main()');
+
 			Settings.sitter = (game_data.player.sitter !== '0') ? '&t=' + game_data.player.id : '';
 
 			if (game_data.screen == 'overview_villages') {
