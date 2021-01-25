@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.4.2 (beta)
+//	version:	2.0.5.0 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -41,8 +41,11 @@ javascript:
 //			> added plan age verification
 //			> added plan age label
 //			> added some more debug logging
-//		2.0.4.2 - 24 by PabloCanaletto
+//		2.0.4.2 - 24.01.2021 by PabloCanaletto
 //			> bug fix - loadPlan() was returning true if plan was outdated
+//		2.0.5.0 - 25.01.2021 by PabloCanaletto
+//			> bug fix - loadDefaults is now async to not stop script when failed
+//			> added plan view
 
 /*
 var DysponentSurowcowy = {
@@ -60,7 +63,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.4.2 (beta)';
+	const version = 'v2.0.5.0 (beta)';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -148,21 +151,23 @@ var DysponentSurowcowy = {
 		sitter: 					'',
 		debug: 						false,
 		isNewerVersion: function () { return typeof DysponentSurowcowy == 'undefined' && typeof settings != "undefined"; },
-		loadDefaults: function () {
-			Debugger.logLine('loadDefaults()');
-			if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
-			var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
-			var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
-			for (const setting of Object.keys(DysponentSurowcowy)) {
-				if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
-				if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
-				if (typeof this[setting] == typeof [0,0,0]) {
-					if (this[setting].length != DysponentSurowcowy[setting].length) {
-						throw errorSetting + ' Liczba warto\u015Bci ustawienia: "' + setting + '" jest niew\u0142a\u015Bciwa. ' + adviceMessage; 
+		loadDefaults: async function () {
+			try {
+				Debugger.logLine('loadDefaults()');
+				if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
+				var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
+				var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
+				for (const setting of Object.keys(DysponentSurowcowy)) {
+					if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
+					if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
+					if (typeof this[setting] == typeof [0,0,0]) {
+						if (this[setting].length != DysponentSurowcowy[setting].length) {
+							throw errorSetting + ' Liczba warto\u015Bci ustawienia: "' + setting + '" jest niew\u0142a\u015Bciwa. ' + adviceMessage; 
+						}
 					}
+					this[setting] = DysponentSurowcowy[setting];
 				}
-				this[setting] = DysponentSurowcowy[setting];
-			}
+			} catch (ex) { Debugger.handle_error(ex); }
 		}
 	};
     const Script = {
@@ -494,17 +499,29 @@ var DysponentSurowcowy = {
 				marketplace_button.setAttribute('type', 'button');
 				marketplace_button.classList.add('btn');
 				submition_panel.append(marketplace_button);
+
+				const view_plan = document.createElement('input');
+				view_plan.setAttribute('id', 'view_plan_button');
+				view_plan.setAttribute('value', 'Zobacz Plan');
+				view_plan.setAttribute('type', 'button');
+				view_plan.classList.add('btn');
+				view_plan.classList.add('float_right');
+				submition_panel.append(view_plan);
+
 				if (!Script.planExecutor.loadPlan()) {
 					marketplace_button.classList.add('btn-disabled');
+					view_plan.classList.add('btn-disabled');
 				} else {
 					marketplace_button.addEventListener('click', async function () { try { await Script.planExecutor.init(); } catch (ex) { Debugger.handle_error(ex); } });
+					view_plan.addEventListener('click', async function () { try { Script.gui.show_plan(); } catch (ex) { Debugger.handle_error(ex); } });
+
 					const plan_date = document.createElement('label');
 					plan_date.setAttribute('id', 'plan_date');
 					plan_date.style.display = 'inline';
 					var time = new Date(Date.now() - Script.plan.timestamp);
 					time = time.getMinutes();
 					var inflection = '';
-					if (time==1) { inflection = 'minutę'; }
+					if (time==1) { inflection = 'minut\u0119'; }
 					else {
 						var x = time;
 						while (x>=10) { x -= 10; }
@@ -542,7 +559,7 @@ var DysponentSurowcowy = {
 				}
 				if (Settings.overFlowThreshold > 100) { Settings.overFlowThreshold = 100; }
 			},
-			activate_marketplace_button: function () {
+			activate_buttons: function () {
 				Debugger.logLine('activate_marketplace_button()');
 
 				$('#marketplace_button')[0].classList.forEach((x) => {
@@ -551,12 +568,19 @@ var DysponentSurowcowy = {
 						$('#marketplace_button')[0].addEventListener('click', async function () { try { await Script.planExecutor.init(); } catch (ex) { Debugger.handle_error(ex); } });
 					}
 				});
+				$('#view_plan_button')[0].classList.forEach((x) => {
+					if (x == 'btn-disabled') {
+						$('#view_plan_button')[0].classList.remove('btn-disabled');
+						$('#view_plan_button')[0].addEventListener('click', async function () { try { Script.gui.show_plan(); } catch (ex) { Debugger.handle_error(ex); } });
+					}
+				});
+
 				if($('#plan_date')[0]) { $('#plan_date')[0].innerHTML = 'W\u0142a\u015Bnie utworzy\u0142e\u015B plan!';	}
 			},
 			create_gui: async function () {
 				try {
 					Debugger.logLine('create_gui()');
-					Settings.loadDefaults();
+					await Settings.loadDefaults();
 					
 					this.options = [
 						{
@@ -628,11 +652,124 @@ var DysponentSurowcowy = {
 
 					$('#content_value')[0].prepend(div);
 				} catch (ex) { Debugger.handle_error(ex); }
+			},
+			show_plan: function () {
+				Debugger.logLine('show_plan()');
+
+				const div = document.createElement('div');
+				div.classList.add('vis');
+				div.style.border = 'none';
+				div.style.margin = 'auto';
+				const title = document.createElement('h2');
+				title.innerText = 'Plan Wezwań Surowców';
+				div.append(title);
+
+				const table = document.createElement('table');
+				table.style['border-spacing'] = '2px';
+				table.style['border-collapse'] = 'separate';
+				table.classList.add('nowrap');
+
+				let summons = Script.plan.summons;
+				let res_classes = ['res wood', 'res stone', 'res iron'];
+
+				for (var i=0; i<summons.length; i++) {
+					var summon = summons[i];
+					var res = [0,0,0];
+					for (var j=0; j<summon.transports.length; j++) {
+						for (var k=0; k<3; k++) { res[k] += summon.transports[j].resources[k]; }
+					}
+					
+					const summonning_tr =	document.createElement('tr');
+
+					const unroll_th = document.createElement('th');
+					const unroll_img = document.createElement('img');
+					unroll_img.src = 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/arrow_right.png';
+					
+					unroll_th.append(unroll_img);
+					summonning_tr.append(unroll_th);
+
+					const summoning_village_label = document.createElement('th');
+					for (var j=0; j<Script.villagesHandler.villages.length; j++) {
+						if (Script.villagesHandler.villages[j].ID == summons[i].destination) {
+							summoning_village_label.innerHTML = Script.villagesHandler.villages[j].label;
+							break;
+						}
+					}
+					summonning_tr.append(summoning_village_label);
+
+
+					for (var j=0; j<3; j++) {
+						const resource_th = document.createElement('th');
+						resource_th.innerHTML = `<span class="${res_classes[j]}" style="padding: 1px 1px 1px 18px;">${res[j]}</span>`;
+						summonning_tr.append(resource_th);
+					}
+
+					table.append(summonning_tr);
+
+					for (var j=0; j<summon.transports.length; j++) {
+						const summon_tr = document.createElement('tr');
+						summon_tr.classList.add("row_b");
+						const village_label = document.createElement('td');
+						village_label.colSpan = '2';
+						for (var k=0; k<Script.villagesHandler.villages.length; k++) {
+							if (Script.villagesHandler.villages[k].ID == summons[i].transports[j].origin) {
+								village_label.innerHTML = Script.villagesHandler.villages[j].label;
+								break;
+							}
+						}
+						summon_tr.append(village_label);
+						for (var k=0; k<3; k++) {
+							const resource_td = document.createElement('td');
+							
+							resource_td.innerHTML = `<span class="${res_classes[k]}" style="padding: 1px 1px 1px 18px;">${summon.transports[j].resources[k]}</span>`;
+							summon_tr.append(resource_td);
+						}
+						summon_tr.style.display = 'none';
+						table.append(summon_tr);
+					}
+
+					unroll_img.setAttribute('onClick', `
+						if (this.src == 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/arrow_down.png') {
+							let tr = $(this).closest('tr')[0];
+							let trs = $(tr).closest('table').find('tr');
+							for (var i=0; i<trs.length; i++) {
+								if (trs[i] == tr) {
+									while (trs[i].innerHTML != '') {
+										i++;
+										trs[i].style.display = 'none';
+									}
+									break;
+								}
+							}
+							this.src = 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/arrow_right.png';
+						} else {
+							let tr = $(this).closest('tr')[0];
+							let trs = $(tr).closest('table').find('tr');
+							for (var i=0; i<trs.length; i++) {
+								if (trs[i] == tr) {
+									while (trs[i].innerHTML != '') {
+										i++;
+										trs[i].style.display = 'table-row';
+									}
+									break;
+								}
+							}
+							this.src = 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/arrow_down.png';
+						}
+					`);
+
+					table.append(document.createElement('tr'));
+				}
+
+				div.append(table);
+
+				Dialog.show(namespace, div.outerHTML);
+				$('#popup_box_'+namespace)[0].style.width = 'auto';
 			}
 		},
 		villagesHandler: {
 			villages: [],
-			addVillage: function (_coords, _ID, _resources, _granary, _traders) {
+			addVillage: function (_coords, _ID, _resources, _granary, _traders, _label) {
 				Debugger.logLine('addVillage()');
 
 				this.villages.push({
@@ -654,7 +791,8 @@ var DysponentSurowcowy = {
 						toUse: 0,
 						all: _traders[1]
 					},
-					receiver: false
+					receiver: false,
+					label: _label
 				});
 			},
 			getBaseData: function (data) {
@@ -677,7 +815,7 @@ var DysponentSurowcowy = {
 					var granary = Number(row.cells[4].innerText);
 					var traders = row.cells[5].innerText.split("/").map(x => Number(x));
 
-					this.addVillage(coords, ID, resources, granary, traders);
+					this.addVillage(coords, ID, resources, granary, traders, row.cells[1].innerHTML);
 				}
 			},
 			updateVillages: function (transport, plus_minus_1) {
@@ -836,8 +974,6 @@ var DysponentSurowcowy = {
 					}
 				}
 
-				//Debugger.logLine(resoucesTargetLevel);
-
 				function anyShortage() {
 					if (shortages[0].length > 0) { return true; }
 					if (shortages[1].length > 0) { return true; }
@@ -933,8 +1069,6 @@ var DysponentSurowcowy = {
 						pointer++;
 					}
 				}
-
-				//Debugger.logLine(transports);
 
 				if (createdTransport) {
 					Script.planOptimizer.normalization.init(transports);
@@ -1168,11 +1302,9 @@ var DysponentSurowcowy = {
 				this.savePlan();
 
 				UI.SuccessMessage('Plan utworzony. Liczba transport\xF3w: ' + allTransports.length, 10000);
-				Script.gui.activate_marketplace_button();
+				Script.gui.activate_buttons();
 
-				if (Settings.debug) {
-					throw 'DEBUGOWANIE';
-				}
+				if (Settings.debug) { throw 'DEBUGOWANIE'; }
 			},
 			loadGroup: function () {
 				Debugger.logLine('loadGroup()');
@@ -1508,6 +1640,10 @@ var DysponentSurowcowy = {
 					return true;
 				}
 				if (Script.plan.group && Script.plan.group != Script.planCreator.loadGroup()) {
+					reload();
+					return true;
+				}
+				if (game_data.screen != 'market') {
 					reload();
 					return true;
 				}
