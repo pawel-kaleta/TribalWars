@@ -52,6 +52,7 @@ javascript:
 //			> error handling modyfications
 //			> added transports verification
 
+/*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYSLNE
 	resourcesFillTo: [35000, 40000, 45000],		// wypełniaj do tej wartości
@@ -63,6 +64,7 @@ var DysponentSurowcowy = {
 	minSummon: 0,								// minimalne wezwanie
 	debug: false
 };
+*/
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
