@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.5.0 (beta)
+//	version:	2.0.6.0 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -46,28 +46,30 @@ javascript:
 //		2.0.5.0 - 25.01.2021 by PabloCanaletto
 //			> bug fix - loadDefaults is now async to not stop script when failed
 //			> added plan view
+//		2.0.6.0 - 29.01.2021 by PabloCanaletto
+//			> bug fix - relayThroughBrokers is no longer makeing 2 transport with the same array of resources
+//			> debug logging optimized for release
+//			> error handling modyfications
+//			> added transports verification
 
-/*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYSLNE
-	resourcesFillTo: [50000, 55000, 55000],		// wypełniaj do tej wartości
-	resourcesSafeguard: [20000, 20000, 20000],	// zabezpieczenie w surowcach, wypelniane priorytetowo
+	resourcesFillTo: [35000, 40000, 45000],		// wypełniaj do tej wartości
+	resourcesSafeguard: [15000, 19000, 22000],	// zabezpieczenie w surowcach, wypelniane priorytetowo
 	tradersSafeguard: 0,						// zabezpieczenie w kupcach
 	considerOngoingTransports: true,			// uwzglednij przychodzace transporty (tak - true, nie - false)
 	overFlowThreshold: 75,						// % pojemnosci spichlerza, powyzej ktorego zapobiegaj przelewaniu sie
 	extendedOptimization: true,					// czy optymalizacja moze generowac dodatkowych odbiorcow (wiecej klikania)
 	minSummon: 0,								// minimalne wezwanie
-	debug: true
+	debug: false
 };
-*/
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.5.0 (beta)';
+	const version = 'v2.0.6.0 (beta)';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
-			if (Settings.debug) { console.log(line); };
 			let last_line = this.log[this.log.length-1];
 			if (last_line.message == line) { 
 				last_line.count++ 
@@ -76,42 +78,77 @@ var DysponentSurowcowy = {
 			this.log.push({count: 1, message: line});
 		},
 		saveLog: function () {
-			var string = '';
-			for (var i=0; i<this.log.length; i++) {	string += this.log[i].count + '	' + this.log[i].message + '\n';	}
+			let string = '';
+			for (let i=0; i<this.log.length; i++) {	string += this.log[i].count + '	' + this.log[i].message + '\n';	}
 			return string;
 		},
         handle_error: function (error) {
-			var gui = '';
-            if (typeof (error) === 'string') {
-				gui = `
-				<h2>Co\u015B posz\u0142o nie tak...</h2>
+			let title = '';
+			let errorName = 'Wyst\u0105pi\u0142 b\u0142\u0105d w dzia\u0142aniu skryptu: ' + error;
+			let stack = '';
+			if (typeof (error) === 'string') {
+				this.logLine('ERROR: '+ error);
+				title = 'Co\u015B posz\u0142o nie tak...';
+				for (let i=Math.min(50, this.log.length-1); i>=1; i--) {
+					var line = this.log[this.log.length-i];
+					stack += line.count + '	' + line.message + '\n';
+				}
+			} else {
+				title = 'WTF - What a Terrible Failure';
+				stack += error.stack;
+			}
+
+			let gui = `
+				<h2>${title}</h2>
 				<p>
-					<strong>${error}</strong><br/>
+					<strong>${errorName}</strong><br/>
 					<br/>
-					Po dodatkow\u0105 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum Og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy komunikat o b\u0142\u0119dzie.<br/>
+					Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy Komunikat o B\u0142\u0119dzie. Pomocny mo\u017Ce okaza\u0107 si\u0119 tak\u017Ce Debug Log z dzia\u0142ania skryptu, ale ten jest znacznie d\u0142u\u017Cszy.<br/>
 					<br/>
-					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do w\u0105tku na forum</a></br>
+					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do w\u0105tku na forum</a><br/>
 					<br/>
 					<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
-					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler][/spoiler]</textarea>
+					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n\n${stack}</textarea><br/>
+					<br/>
+					<strong>Debug Log:</strong><br/>
+					<textarea rows='5' cols='100'>[spoiler=Debug Log][code]${Debugger.saveLog()}[/code]</textarea>
 				</p>
-				`;
-            }
-            else {
-				gui = `
-					<h2>WTF - What a Terrible Failure</h2>
-					<p>
-						<strong>Wyst\u0105pi\u0142 nieoczekiwany b\u0142\u0105d. Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy komunikat o b\u0142\u0119dzie.</strong><br/>
-						<br/>
-						<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do wątku na forum</a><br/>
-						<br/>
-						<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
-						<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n\n${error.stack}\n[spoiler=DebugLog][code]${Debugger.saveLog()}[/code][/spoiler]</textarea>
-					</p>
-				`;
-			}
+			`;
             Dialog.show(namespace, gui);
-        }
+		},
+		logTransports: function (transports) {
+			this.logLine('logTransports()');
+			for (let i=0; i<transports.length; i++) {
+				this.logLine( '' + i + ' origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders );
+			}
+		},
+		verifyTransports: function (transports) {
+			this.logLine('verifyTransports()');
+			this.logLine('Number of transports: ' + transports.length);
+
+			let errors = [];
+			for (let i=0; i<transports.length; i++) {
+				if (Settings.debug) { this.logLine( '' + i + '  origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders ); }
+				if (transports[i].resources[0] < 0) { errors.push('Wood is negative! '	+i); }
+				if (transports[i].resources[1] < 0) { errors.push('Stone is negative! '	+i); }
+				if (transports[i].resources[2] < 0) { errors.push('Iron is negative! '	+i); }
+				for (let j=i; j<transports.length; j++) {
+					if (j==i) { continue; }
+					if (transports[i].resources === transports[j].resources) { 
+						errors.push('Two transports share the same resources array! ' + i + ' ' + j);
+					}
+				}
+				if ((transports[i].resources[0]+transports[i].resources[1]+transports[i].resources[2])/1000 != transports[i].traders) {
+					errors.push("Traders don't match with resources! "+i);
+				}
+			}
+
+			if (errors[0]) { 
+				this.logTransports(transports);
+				while (errors[0]) { this.logLine(errors.shift()); }
+				throw 'There is a problem with a transport!';
+			}
+		}
 	};
 	const Utilities = {
 		swap: function (tab, ia, ib) {
@@ -127,8 +164,6 @@ var DysponentSurowcowy = {
 				if (number >= 1000) {
 					number /= 1000;
 				} else {
-					//if (i === 0)
-					//	return number.toFixed(1);
 					let fraction = 2;
 					if (number >= 10)
 						fraction = 1;
@@ -154,9 +189,10 @@ var DysponentSurowcowy = {
 		loadDefaults: async function () {
 			try {
 				Debugger.logLine('loadDefaults()');
+
 				if (typeof DysponentSurowcowy == 'undefined') { throw 'Nie znaleziono ustawie\u0144 domy\u015Blnych. Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.' }
-				var errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
-				var adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
+				let errorSetting = 'Wykryto b\u0142\u0105d w ustawieniach domy\u015Blnych.';
+				let adviceMessage = 'Zaleca si\u0119 ponowne skopiowanie sygnatury skryptu ze skryptoteki na FO.';
 				for (const setting of Object.keys(DysponentSurowcowy)) {
 					if (typeof this[setting] == "undefined") { throw errorSetting + ' Nieznane ustawienie: "' + setting + '". ' + adviceMessage; }
 					if (typeof this[setting] != typeof DysponentSurowcowy[setting]) { throw errorSetting + ' Nie rozpoznano warto\u015Bci ustawienia: "' + setting + '". ' + adviceMessage; }
@@ -248,16 +284,16 @@ var DysponentSurowcowy = {
 				let villages = Script.villagesHandler.villages;
 				let transports = Script.transportsHandler.ongoingTransports;
 
-				for (var i=0; i<villages.length; i++) {
+				for (let i=0; i<villages.length; i++) {
 					panel_data.gran_sum 	+= villages[i].granary;
 					panel_data.trad_sum_in	+= villages[i].traders.free;
 					panel_data.trad_sum_all	+= villages[i].traders.all;
-					for (var j=0; j<3; j++) {
+					for (let j=0; j<3; j++) {
 						panel_data.res_sum_in[j] += villages[i].resources.present[j];
 					}
 				}
-				for (var i=0; i<transports.length; i++) {
-					for (var j=0; j<3; j++) {
+				for (let i=0; i<transports.length; i++) {
+					for (let j=0; j<3; j++) {
 						panel_data.res_sum_out[j] += transports[i].resources[j];
 					}
 				}
@@ -266,7 +302,7 @@ var DysponentSurowcowy = {
 				panel_data.trad_avg_all =	panel_data.trad_sum_all	/ villages.length;
 				panel_data.trad_avg_out =	panel_data.trad_sum_out	/ villages.length;
 				panel_data.trad_avg_in =	panel_data.trad_sum_in	/ villages.length;
-				for (var i=0; i<3; i++) {
+				for (let i=0; i<3; i++) {
 					panel_data.res_sum_all[i] = panel_data.res_sum_in[i] + panel_data.res_sum_out[i];
 					panel_data.res_avg_in[i] =	panel_data.res_sum_in[i]	/ villages.length;
 					panel_data.res_avg_out[i] =	panel_data.res_sum_out[i]	/ villages.length;
@@ -518,12 +554,12 @@ var DysponentSurowcowy = {
 					const plan_date = document.createElement('label');
 					plan_date.setAttribute('id', 'plan_date');
 					plan_date.style.display = 'inline';
-					var time = new Date(Date.now() - Script.plan.timestamp);
+					let time = new Date(Date.now() - Script.plan.timestamp);
 					time = time.getMinutes();
-					var inflection = '';
+					let inflection = '';
 					if (time==1) { inflection = 'minut\u0119'; }
 					else {
-						var x = time;
+						let x = time;
 						while (x>=10) { x -= 10; }
 						if (2<=x && x<=4) { inflection = 'minuty'; }
 						else { inflection = 'minut'; }
@@ -538,7 +574,7 @@ var DysponentSurowcowy = {
 				Debugger.logLine('load_settings()');
 
 				for (option of this.options) {
-					var setting;
+					let setting;
 					if (option.controls.length == 1) {
 						setting = Settings[option.controls[0].attributes.id];
 						if (option.controls[0].attributes.type == 'checkbox') {
@@ -551,7 +587,7 @@ var DysponentSurowcowy = {
 					}
 					else {
 						setting = Settings[option.controls[0].attributes.id.split("_")[0]];
-						for (var i=0; i<3; i++) {
+						for (let i=0; i<3; i++) {
 							setting[i] = Number($('#'+option.controls[i].attributes.id)[0].value);
 							if (setting[i] == NaN || setting[i] < 0 || setting[i] > 700000) { throw 'Niew\u0142a\u015Bciwa warto\u015B\u0107 ustawienia "' + option.controls[0].attributes.id +'".' }
 						}
@@ -560,7 +596,7 @@ var DysponentSurowcowy = {
 				if (Settings.overFlowThreshold > 100) { Settings.overFlowThreshold = 100; }
 			},
 			activate_buttons: function () {
-				Debugger.logLine('activate_marketplace_button()');
+				Debugger.logLine('activate_buttons()');
 
 				$('#marketplace_button')[0].classList.forEach((x) => {
 					if (x == 'btn-disabled') {
@@ -672,11 +708,11 @@ var DysponentSurowcowy = {
 				let summons = Script.plan.summons;
 				let res_classes = ['res wood', 'res stone', 'res iron'];
 
-				for (var i=0; i<summons.length; i++) {
-					var summon = summons[i];
-					var res = [0,0,0];
-					for (var j=0; j<summon.transports.length; j++) {
-						for (var k=0; k<3; k++) { res[k] += summon.transports[j].resources[k]; }
+				for (let i=0; i<summons.length; i++) {
+					let summon = summons[i];
+					let res = [0,0,0];
+					for (let j=0; j<summon.transports.length; j++) {
+						for (let k=0; k<3; k++) { res[k] += summon.transports[j].resources[k]; }
 					}
 					
 					const summonning_tr =	document.createElement('tr');
@@ -689,7 +725,7 @@ var DysponentSurowcowy = {
 					summonning_tr.append(unroll_th);
 
 					const summoning_village_label = document.createElement('th');
-					for (var j=0; j<Script.villagesHandler.villages.length; j++) {
+					for (let j=0; j<Script.villagesHandler.villages.length; j++) {
 						if (Script.villagesHandler.villages[j].ID == summons[i].destination) {
 							summoning_village_label.innerHTML = Script.villagesHandler.villages[j].label;
 							break;
@@ -698,7 +734,7 @@ var DysponentSurowcowy = {
 					summonning_tr.append(summoning_village_label);
 
 
-					for (var j=0; j<3; j++) {
+					for (let j=0; j<3; j++) {
 						const resource_th = document.createElement('th');
 						resource_th.innerHTML = `<span class="${res_classes[j]}" style="padding: 1px 1px 1px 18px;">${res[j]}</span>`;
 						summonning_tr.append(resource_th);
@@ -706,19 +742,19 @@ var DysponentSurowcowy = {
 
 					table.append(summonning_tr);
 
-					for (var j=0; j<summon.transports.length; j++) {
+					for (let j=0; j<summon.transports.length; j++) {
 						const summon_tr = document.createElement('tr');
 						summon_tr.classList.add("row_b");
 						const village_label = document.createElement('td');
 						village_label.colSpan = '2';
-						for (var k=0; k<Script.villagesHandler.villages.length; k++) {
+						for (let k=0; k<Script.villagesHandler.villages.length; k++) {
 							if (Script.villagesHandler.villages[k].ID == summons[i].transports[j].origin) {
 								village_label.innerHTML = Script.villagesHandler.villages[j].label;
 								break;
 							}
 						}
 						summon_tr.append(village_label);
-						for (var k=0; k<3; k++) {
+						for (let k=0; k<3; k++) {
 							const resource_td = document.createElement('td');
 							
 							resource_td.innerHTML = `<span class="${res_classes[k]}" style="padding: 1px 1px 1px 18px;">${summon.transports[j].resources[k]}</span>`;
@@ -732,7 +768,7 @@ var DysponentSurowcowy = {
 						if (this.src == 'https://dspl.innogamescdn.com/asset/34fb11bc/graphic/arrow_down.png') {
 							let tr = $(this).closest('tr')[0];
 							let trs = $(tr).closest('table').find('tr');
-							for (var i=0; i<trs.length; i++) {
+							for (let i=0; i<trs.length; i++) {
 								if (trs[i] == tr) {
 									while (trs[i].innerHTML != '') {
 										i++;
@@ -745,7 +781,7 @@ var DysponentSurowcowy = {
 						} else {
 							let tr = $(this).closest('tr')[0];
 							let trs = $(tr).closest('table').find('tr');
-							for (var i=0; i<trs.length; i++) {
+							for (let i=0; i<trs.length; i++) {
 								if (trs[i] == tr) {
 									while (trs[i].innerHTML != '') {
 										i++;
@@ -798,22 +834,22 @@ var DysponentSurowcowy = {
 			getBaseData: function (data) {
 				Debugger.logLine('getBaseData()');
 
-				var table = $(data).find('#production_table')[0];
-				for (var i = 1; i < table.rows.length; i++) {
-					var row = table.rows[i];
+				const table = $(data).find('#production_table')[0];
+				for (let i=1; i<table.rows.length; i++) {
+					let row = table.rows[i];
 
-					var coords = row.cells[1].innerText.match(/\d{3}\|\d{3}/g);
+					let coords = row.cells[1].innerText.match(/\d{3}\|\d{3}/g);
 					coords = coords[coords.length-1].split("|").map(x => Number(x));
 
-					var ID = $(row.cells[1]).find('.quickedit-vn')[0].dataset.id;
+					let ID = $(row.cells[1]).find('.quickedit-vn')[0].dataset.id;
 
-					var resources = [0,0,0];
+					let resources = [0,0,0];
 					row.cells[3].innerText.trim().split(' ').map(x => Number(x.replace('.', ''))).forEach((x, i) => {
 						resources[i] = x;
 					});
 					if(resources.length != 3) { throw 'Wczytano z\u0142\u0105 liczb\u0119 rodzaj\xF3w surowc\xF3w'; }
-					var granary = Number(row.cells[4].innerText);
-					var traders = row.cells[5].innerText.split("/").map(x => Number(x));
+					let granary = Number(row.cells[4].innerText);
+					let traders = row.cells[5].innerText.split("/").map(x => Number(x));
 
 					this.addVillage(coords, ID, resources, granary, traders, row.cells[1].innerHTML);
 				}
@@ -824,7 +860,7 @@ var DysponentSurowcowy = {
 				let origin 		= transport.origin;
 				let destination	= transport.destination;
 				destination.receiver = false;
-				for (var i=0; i<3; i++) {
+				for (let i=0; i<3; i++) {
 					var change = {
 						resources: transport.resources[i]*plus_minus_1,
 						traders: transport.traders*plus_minus_1
@@ -856,8 +892,8 @@ var DysponentSurowcowy = {
 					}
 				},
 				distance: function (vA, vB) {
-					var distA = Utilities.distance(Script.villagesHandler.compareVillages.refCoords, vA.coords);
-					var distB = Utilities.distance(Script.villagesHandler.compareVillages.refCoords, vB.coords);
+					let distA = Utilities.distance(Script.villagesHandler.compareVillages.refCoords, vA.coords);
+					let distB = Utilities.distance(Script.villagesHandler.compareVillages.refCoords, vB.coords);
 					return Script.villagesHandler.compareVillages.noReverse * (distA - distB);
 				}
 			}
@@ -869,13 +905,25 @@ var DysponentSurowcowy = {
 			addTransport: function (_transports, _resources, _origin, _destination) {
 				Debugger.logLine('addTransport()');
 
-				return _transports.push({
+				if (_origin === _destination) { throw 'Attempt to create a transport to itself! - resources: ' + _resources[0] + ',' + _resources[1] + ',' + _resources[2] + ', coords: (' + _origin.coords.x + '|' + _origin.coords.y + '), ' + ' ID: ' + _origin.ID }
+				for (let i=0; i<3; i++) { 
+					if (_resources[i] < 0) {  { throw 'Attempt to create a transport with negative resource! - resources: ' + _resources[0] + ',' + _resources[1] + ',' + _resources[2] } }
+				}
+				if (_resources[0] + _resources[1] + _resources[2] == 0) { throw 'Attempt to create an empty transport! - resources: ' + _resources[0] + ',' + _resources[1] + ',' + _resources[2] }
+
+				let l = _transports.push({
 					resources: _resources,
 					traders: (_resources[0] + _resources[1] + _resources[2]) / 1000,
 					origin: _origin,
 					destination: _destination,
 					distance: Utilities.distance(_origin.coords, _destination.coords),
 				});
+
+				let addedTransport = _transports[l-1];
+				Debugger.logLine('NEW TRANSPORT: (' + addedTransport.resources[0] + ',' + addedTransport.resources[1] + ',' + addedTransport.resources[2] + ')' + ' traders:' + addedTransport.traders);
+				Script.villagesHandler.updateVillages(addedTransport, 1);
+
+				return addedTransport;
 			},
 			compareTransports: {
 				route: function (tA, tB) {
@@ -889,13 +937,20 @@ var DysponentSurowcowy = {
 			},
 			transportCost: function (transport) { return transport.traders * transport.distance * transport.distance;
 			},
-			reduceTransport: function (resources, transport) {
+			reduceTransport: function (reduction, transports, i) {
 				Debugger.logLine('reduceTransport()');
 
-				Script.villagesHandler.updateVillages(transport, -1);
-				transport.traders -= (resources[0] + resources[1] + resources[2]) / 1000;
-				for (var k=0; k<3; k++) { transport.resources[k] -= resources[k]; }
-				Script.villagesHandler.updateVillages(transport, 1);
+				Debugger.logLine('Reduction: i: ' + i + ', (' + reduction[0] +','+ reduction[1] +','+ reduction[2] + '), origin: ' + transports[i].origin.ID + ', destination: ' + transports[i].destination.ID);
+
+				if( reduction[0]<0 || reduction[1] < 0 || reduction[2] < 0 ) {
+					throw 'Attempt to reduce transport by negative number! - reduction: ' + reduction[0] + ',' + reduction[1] + ',' + reduction[0];
+				}
+				if(reduction[0]+reduction[1]+reduction[2] <= 0) { throw 'Attempt to reduce transport by 0! - reduction: ' + reduction[0] + ',' + reduction[1] + ',' + reduction[0]; }
+
+				Script.villagesHandler.updateVillages(transports[i], -1);
+				transports[i].traders -= ((reduction[0] + reduction[1] + reduction[2]) / 1000);
+				for (let k=0; k<3; k++) { transports[i].resources[k] -= reduction[k]; }
+				Script.villagesHandler.updateVillages(transports[i], 1);
 			},
 			getOngoingTransports: function (data) {
 				Debugger.logLine('getOngoingTransports()');
@@ -908,19 +963,19 @@ var DysponentSurowcowy = {
 					throw 'Wyst\u0105pi\u0142 b\u0142\u0105d podczas pobierania danych z przegl\u0105du transport\xF3w.';
 				}	
 
-				for (var i = 1; i < table.rows.length - 1; i++) {
-					var cells = table.rows[i].cells;
+				for (let i=1; i<table.rows.length-1; i++) {
+					let cells = table.rows[i].cells;
 
-					var id = $(cells[4]).find('a')[0].href.split('id=')[1];
-					var traders = Number(cells[7].innerText);
-					var resources = [0,0,0];
+					let id = $(cells[4]).find('a')[0].href.split('id=')[1];
+					let traders = Number(cells[7].innerText);
+					let resources = [0,0,0];
 
-					var incommings = $(cells[8]).find('.nowrap');
-					for (var j = 0; j < incommings.length; j++) {
-						var res = Number(incommings[j].innerText.replace('.', ''));
+					let incommings = $(cells[8]).find('.nowrap');
+					for (let j=0; j<incommings.length; j++) {
+						let res = Number(incommings[j].innerText.replace('.', ''));
 
-						var icon = incommings[j].getElementsByClassName("icon header")[0];
-						var index = -1;
+						let icon = incommings[j].getElementsByClassName("icon header")[0];
+						let index = -1;
 						if (icon.title == "Drewno")	{ index = 0; }
 						if (icon.title == "Glina")	{ index = 1; }
 						if (icon.title == "Żelazo")	{ index = 2; }
@@ -935,10 +990,10 @@ var DysponentSurowcowy = {
 		planCreator: {
 			fillVillages: function (resoucesTargetLevel, transports) {
 				Debugger.logLine('fillVillages('+resoucesTargetLevel[0]+','+resoucesTargetLevel[1]+','+resoucesTargetLevel[2]+')');
-				var villages = Script.villagesHandler.villages;
-				var compareVillages = Script.villagesHandler.compareVillages;
+				let villages = Script.villagesHandler.villages;
+				let compareVillages = Script.villagesHandler.compareVillages;
 				
-				var createdTransport = false;
+				let createdTransport = false;
 
 				let shortages = [[], [], []];
 				let surpluses = [];
@@ -953,9 +1008,9 @@ var DysponentSurowcowy = {
 					return true;
 				}
 
-				for (var i=0; i<villages.length; i++) {
+				for (let i=0; i<villages.length; i++) {
 					let added_to_surpluses = false;
-					for (var j=0; j<3; j++) {
+					for (let j=0; j<3; j++) {
 						if (villages[i].resources.owned[j] > resoucesTargetLevel[j]) {
 							if (!added_to_surpluses && if_capable_surplus(villages[i], j)) {
 								added_to_surpluses = true;
@@ -966,11 +1021,11 @@ var DysponentSurowcowy = {
 						}
 					}
 				}
-				for (var i=0; i<3; i++) {
+				for (let i=0; i<3; i++) {
 					compareVillages.noReverse = 1;
 					shortages[i].sort(compareVillages.resources[i]);
 					if(shortages[i][1] && shortages[i][0].resources[i] > shortages[i][1].resources[i]) {
-						throw 'ERROR: fillVillages() shortages sort failed';
+						throw 'fillVillages() shortages sort failed';
 					}
 				}
 
@@ -985,11 +1040,11 @@ var DysponentSurowcowy = {
 				Debugger.logLine('fillVillages() while_1');
 				while (	anyShortage() && surpluses.length > 0 ) {
 					
-					if(counter_1++ > 1000) { throw 'ERROR: fillVillages(): while_1 is infinite'; }
-					var receiver = null;
-					var res = null;
+					if(counter_1++ > 1000) { throw 'fillVillages(): while_1 is infinite'; }
+					let receiver = null;
+					let res = null;
 					
-					for (var i=0; i<3; i++) {
+					for (let i=0; i<3; i++) {
 						if (!shortages[i][0]) { continue; }
 						if (!receiver || receiver.resources.owned[res] > shortages[i][0].resources.owned[i]) {
 							receiver = shortages[i][0];
@@ -997,17 +1052,17 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (typeof receiver === null || typeof res === null) { throw 'ERROR: fillVillages(): no receiver or no res'; }
+					if (typeof receiver === null || typeof res === null) { throw 'fillVillages(): no receiver or no res'; }
 
 					compareVillages.refCoords = receiver.coords;
 					compareVillages.noReverse = 1;
 					surpluses.sort(compareVillages.distance);
 
 					if (surpluses[1] && Utilities.distance(surpluses[0].coords, receiver.coords) > Utilities.distance(surpluses[1].coords, receiver.coords)) {
-						throw 'ERROR: fillVillages() surpluses sort failed';
+						throw 'fillVillages() surpluses sort failed';
 					}
 
-					var lack = resoucesTargetLevel[res];
+					let lack = resoucesTargetLevel[res];
 					let capacity = receiver.granary * Settings.overFlowThreshold / 100;
 					if (capacity < lack) { lack = capacity;	}
 
@@ -1018,13 +1073,13 @@ var DysponentSurowcowy = {
 						continue;
 					}
 
-					var firstLooper = null;
+					let firstLooper = null;
 					let counter_2 = 0;
 					Debugger.logLine('fillVillages() while_1 while_2');
 					while (surpluses[0] && surpluses[0] != firstLooper) {
 						
-						if(counter_2++ > 1000) { throw 'ERROR: fillVillages(): while_2 is infinite'; }
-						var spare = surpluses[0].resources.present[res] - resoucesTargetLevel[res];
+						if(counter_2++ > 1000) { throw 'fillVillages(): while_2 is infinite'; }
+						let spare = surpluses[0].resources.present[res] - resoucesTargetLevel[res];
 						if (spare < 1000)
 						{
 							if (!firstLooper) { firstLooper = surpluses[0]; }
@@ -1039,15 +1094,17 @@ var DysponentSurowcowy = {
 							continue;
 						}
 
-						if(surpluses[0] === receiver) { throw 'ERROR: fillVillages(): origin === destination'; }
+						if(surpluses[0] === receiver) { throw 'fillVillages(): origin === destination'; }
 
-						var transportResources = [0,0,0];
+						let transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
-						var l = Script.transportsHandler.addTransport(transports, transportResources, surpluses[0], receiver);
-						Script.villagesHandler.updateVillages(transports[l-1], 1);
+						Script.transportsHandler.addTransport(transports, transportResources, surpluses[0], receiver);
 						Debugger.logLine('fillVillages() while_1 while_2 | NEW TRANSPORT');
 						createdTransport = true;
+
+						if (Settings.debug) { Debugger.verifyTransports(transports); }
+
 						break;
 					}
 					if (surpluses[0] && surpluses[0] == firstLooper) {
@@ -1055,11 +1112,11 @@ var DysponentSurowcowy = {
 						shortages[res].shift();
 					}
 
-					var pointer = 0;
+					let pointer = 0;
 					let counter_3 = 0;
 					Debugger.logLine('fillVillages() while_1 while_3')
 					while (pointer < shortages[res].length-1) {
-						if(counter_3++ > 1000) { throw 'ERROR: fillVillages(): while_3 is infinite'; }
+						if(counter_3++ > 1000) { throw 'fillVillages(): while_3 is infinite'; }
 						if (shortages[res][pointer].resources.owned[res] < shortages[res][pointer+1].resources.owned[res]) { 
 							Debugger.logLine('fillVillages() while_1 while_3 | end');
 							break;
@@ -1071,6 +1128,7 @@ var DysponentSurowcowy = {
 				}
 
 				if (createdTransport) {
+					Debugger.verifyTransports(transports);
 					Script.planOptimizer.normalization.init(transports);
 				}
 			},
@@ -1080,13 +1138,13 @@ var DysponentSurowcowy = {
 				let villages = Script.villagesHandler.villages;
 				let compareVillages = Script.villagesHandler.compareVillages;
 
-				var createdTransport = false;
+				let createdTransport = false;
 
-				var villagesWithSpareGranary 	= [[], [], []];
-				var villagesWithOverFlow 		= [[], [], []];
+				let villagesWithSpareGranary 	= [[], [], []];
+				let villagesWithOverFlow 		= [[], [], []];
 
-				for (var i=0; i<3; i++) {
-					for (var j=0; j<villages.length; j++) {
+				for (let i=0; i<3; i++) {
+					for (let j=0; j<villages.length; j++) {
 						if (villages[j].resources.owned[i] / villages[j].granary > resoucesTargetLevel / 100) {
 							if (villages[j].traders.free > Settings.tradersSafeguard) {
 								villagesWithOverFlow[i].push(villages[j]);
@@ -1100,10 +1158,10 @@ var DysponentSurowcowy = {
 				}
 
 				compareVillages.noReverse = -1;
-				for (var i=0; i<3; i++) {
+				for (let i=0; i<3; i++) {
 					villagesWithOverFlow[i].sort(compareVillages.resources[i]);
 					if (villagesWithOverFlow[i][1] && villagesWithOverFlow[i][0].resources[i] < villagesWithOverFlow[i][1].resources[i]) {
-						throw 'ERROR: preventOverflowing(): overFlows sort failed';
+						throw 'preventOverflowing(): overFlows sort failed';
 					}
 				}
 
@@ -1114,14 +1172,14 @@ var DysponentSurowcowy = {
 					return false;
 				}
 
-				var counter_1 = 0;
+				let counter_1 = 0;
 				Debugger.logLine("preventOverflowing() while_1");
 				while (preventionPossible()) {
-					if(counter_1++ > 1000) { throw 'ERROR: preventOverflowing(): while_1 is infinite'; }
-					var sender = null;
-					var res = null;
+					if(counter_1++ > 1000) { throw 'preventOverflowing(): while_1 is infinite'; }
+					let sender = null;
+					let res = null;
 
-					for (var i=0; i<3; i++) {
+					for (let i=0; i<3; i++) {
 						if (!villagesWithOverFlow[i][0]) { continue; }
 						if (!sender || sender.resources.owned[res] < villagesWithOverFlow[i][0].resources.owned[i]) {
 							sender = villagesWithOverFlow[i][0];
@@ -1129,10 +1187,15 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					if (typeof sender === null || typeof res === null) { throw 'ERROR: preventOverflowing(): no sender or no res'; }
+					if (typeof sender === null || typeof res === null) { throw 'preventOverflowing(): no sender or no res'; }
 
-					var overFlow = sender.resources.owned[res];
+					let overFlow = sender.resources.owned[res];
 					overFlow -= sender.granary * resoucesTargetLevel / 100;
+					if (overFlow <= 0) {
+						Debugger.logLine("preventOverflowing() while_1 | (overFlow <= 0) ==> shift()");
+						villagesWithOverFlow[res].shift();
+						continue;
+					}
 
 					if (sender.traders.free <= Settings.tradersSafeguard) {
 						Debugger.logLine("preventOverflowing() while_1 | (traders.free <= tradersSafeguard) ==> shift()");
@@ -1145,15 +1208,15 @@ var DysponentSurowcowy = {
 					villagesWithSpareGranary[res].sort(compareVillages.distance);
 
 					if (villagesWithSpareGranary[res][1] && Utilities.distance(villagesWithSpareGranary[res][0].coords, sender.coords) > Utilities.distance(villagesWithSpareGranary[res][1].coords, sender.coords)) {
-						throw 'ERROR: preventOverflowing(): spareGranarys sort failed';
+						throw 'preventOverflowing(): spareGranarys sort failed';
 					}
 
-					var counter_2 = 0;
+					let counter_2 = 0;
 					Debugger.logLine("preventOverflowing() while_1 while_2");
 					while (villagesWithSpareGranary[res][0]) {
-						if(counter_2++ > 1000) { throw 'ERROR: preventOverflowing(): while_2 is infinite'; }
-						var receiver = villagesWithSpareGranary[res][0];
-						var spereSpace = receiver.granary * resoucesTargetLevel / 100;
+						if(counter_2++ > 1000) { throw 'preventOverflowing(): while_2 is infinite'; }
+						let receiver = villagesWithSpareGranary[res][0];
+						let spereSpace = receiver.granary * resoucesTargetLevel / 100;
 						spereSpace -= receiver.resources.owned[res];
 
 						if (spereSpace < 1000) {
@@ -1162,20 +1225,21 @@ var DysponentSurowcowy = {
 							continue;
 						}
 
-						var transportResources = [0,0,0];
+						let transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
-						if(sender === receiver) { throw 'ERROR: preventOverFlowing(): origin === destination'; }
+						if(sender === receiver) { throw 'preventOverFlowing(): origin === destination'; }
 
-						var l = Script.transportsHandler.addTransport(transports, transportResources, sender, receiver);
-						Script.villagesHandler.updateVillages(transports[l-1], 1);
+						Script.transportsHandler.addTransport(transports, transportResources, sender, receiver);
 						createdTransport = true;
 						Debugger.logLine('preventOverflowing() while_1 while_2 | NEW TRANSPORT');
+
 						break;
 					}
 				}
 
 				if (createdTransport) {
+					Debugger.verifyTransports(transports);
 					Script.planOptimizer.normalization.init(transports);
 				}
 			},
@@ -1187,16 +1251,16 @@ var DysponentSurowcowy = {
 				this.fillVillages(Settings.resourcesSafeguard, Script.transportsHandler.priorityTransports);
 
 				if (Settings.extendedOptimization) {
-					var resTarget = [0,0,0];
-					for (var i=0; i<3; i++) { resTarget[i] = Settings.resourcesRelayBuffer[i]; }
+					let resTarget = [0,0,0];
+					for (let i=0; i<3; i++) { resTarget[i] = Settings.resourcesRelayBuffer[i]; }
 
-					var counter_4 = 0;
+					let counter_4 = 0;
 					let increase = false;
 					do {
 						this.fillVillages(resTarget, Script.transportsHandler.generalTransports);
-						if(counter_4++ > 750) { throw 'ERROR: createPlan(): while is infinite'; }
+						if(counter_4++ > 750) { throw 'createPlan(): while is infinite'; }
 						increase = false;
-						for (var i=0; i<3; i++) {
+						for (let i=0; i<3; i++) {
 							if (resTarget[i] < Settings.resourcesFillTo[i]) {
 								resTarget[i] += 1000;
 								increase = true;
@@ -1211,17 +1275,19 @@ var DysponentSurowcowy = {
 				if (Settings.overFlowThreshold < 100) { this.preventOverflowing(Settings.overFlowThreshold, Script.transportsHandler.generalTransports); }
 				if (Script.transportsHandler.generalTransports.length > 0) { Script.planOptimizer.optimization.init(); }
 
-				var p = Script.transportsHandler.priorityTransports;
-				var g = Script.transportsHandler.generalTransports;
+				let p = Script.transportsHandler.priorityTransports;
+				let g = Script.transportsHandler.generalTransports;
 				if (p.length + g.length == 0) {
 					UI.SuccessMessage('Zdaje si\u0119, \u017Ce nic nie potrzeba.', 10000);
 					return;
 				}
-				var allTransports = [];
-				for (var i=0; i<p.length; i++) { allTransports.push(p[i]); }
-				for (var i=0; i<g.length; i++) { allTransports.push(g[i]); }
+				let allTransports = [];
+				for (let i=0; i<p.length; i++) { allTransports.push(p[i]); }
+				for (let i=0; i<g.length; i++) { allTransports.push(g[i]); }
 
 				Script.planOptimizer.normalization.init(allTransports);
+
+				if (Settings.debug) { console.log(allTransports); }
 
 				Script.plan = {
 					summoned: 0,
@@ -1230,9 +1296,9 @@ var DysponentSurowcowy = {
 					summons: []
 				};
 
-				for (var i=0; i<allTransports.length; i++) {
-					var summon = null;
-					for (var j=0; j<Script.plan.summons.length; j++) {
+				for (let i=0; i<allTransports.length; i++) {
+					let summon = null;
+					for (let j=0; j<Script.plan.summons.length; j++) {
 						if (Script.plan.summons[j] ) {
 							if (Script.plan.summons[j].destination == allTransports[i].destination.ID) {
 								summon = Script.plan.summons[j];
@@ -1259,10 +1325,10 @@ var DysponentSurowcowy = {
 				}
 
 				if (Settings.minSummon > 0) {
-					for (var i=0; i<Script.plan.summons.length; i++) {
-						var summon = Script.plan.summons[i];
-						var res = [0,0,0];
-						for (var j=0; j<summon.transports.length; j++) {
+					for (let i=0; i<Script.plan.summons.length; i++) {
+						let summon = Script.plan.summons[i];
+						let res = [0,0,0];
+						for (let j=0; j<summon.transports.length; j++) {
 							res[0] += summon.transports[j].resources[0];
 							res[1] += summon.transports[j].resources[1];
 							res[2] += summon.transports[j].resources[2];
@@ -1278,7 +1344,7 @@ var DysponentSurowcowy = {
 				}
 
 				function coord(id) {
-					for (var i=0; i<Script.villagesHandler.villages.length; i++) {
+					for (let i=0; i<Script.villagesHandler.villages.length; i++) {
 						if (Script.villagesHandler.villages[i].ID == id) {
 							return Script.villagesHandler.villages[i].coords.x + '|' + Script.villagesHandler.villages[i].coords.y;
 						}
@@ -1287,14 +1353,14 @@ var DysponentSurowcowy = {
 
 				Debugger.logLine("plan utworzony:");
 
-				for (var i=0; i<Script.plan.summons.length; i++) {
-					var summon = Script.plan.summons[i];
-					var res = [0,0,0];
-					for (var j=0; j<summon.transports.length; j++) {
-						for (var k=0; k<3; k++) { res[k] += summon.transports[j].resources[k]; }
+				for (let i=0; i<Script.plan.summons.length; i++) {
+					let summon = Script.plan.summons[i];
+					let res = [0,0,0];
+					for (let j=0; j<summon.transports.length; j++) {
+						for (let k=0; k<3; k++) { res[k] += summon.transports[j].resources[k]; }
 					}
 					Debugger.logLine(coord(summon.destination) + ' (' + res[0] + ',' + res[1] + ',' + res[2]+')');
-					for (var j=0; j<summon.transports.length; j++) {
+					for (let j=0; j<summon.transports.length; j++) {
 						Debugger.logLine('	' + coord(summon.transports[j].origin) + ' ' + summon.transports[j].resources);
 					}
 				}
@@ -1304,13 +1370,15 @@ var DysponentSurowcowy = {
 				UI.SuccessMessage('Plan utworzony. Liczba transport\xF3w: ' + allTransports.length, 10000);
 				Script.gui.activate_buttons();
 
-				if (Settings.debug) { throw 'DEBUGOWANIE'; }
+				//if (Settings.debug) { 
+					throw 'DEBUGOWANIE';
+				//}
 			},
 			loadGroup: function () {
 				Debugger.logLine('loadGroup()');
 
-				var groups = $('.group-menu-item');
-				for (var i=0; i<groups.length; i++) {
+				let groups = $('.group-menu-item');
+				for (let i=0; i<groups.length; i++) {
 					if (groups[i].nodename == 'strong') {
 						return groups[i].getAttribute('data-group-id');
 					}
@@ -1322,7 +1390,7 @@ var DysponentSurowcowy = {
 
 				localStorage.removeItem(namespace);
 				if (!Script.plan.summons[0]) { return; }
-				var planJSON = JSON.stringify(Script.plan);
+				let planJSON = JSON.stringify(Script.plan);
 				localStorage.setItem(namespace, planJSON);
 			},
 			init: async function () {
@@ -1331,8 +1399,8 @@ var DysponentSurowcowy = {
 				Script.gui.load_settings();
 
 				Settings.resourcesRelayBuffer = [0,0,0];
-				for (var i=0; i<3; i++) {
-					var tmp = Settings.resourcesFillTo[i] + Settings.resourcesSafeguard[i];
+				for (let i=0; i<3; i++) {
+					let tmp = Settings.resourcesFillTo[i] + Settings.resourcesSafeguard[i];
 					tmp = Math.floor(tmp/2);
 					Settings.resourcesRelayBuffer[i] = tmp;
 				}
@@ -1342,10 +1410,10 @@ var DysponentSurowcowy = {
 					let transports = Script.transportsHandler.ongoingTransports;
 					let villages = Script.villagesHandler.villages;
 
-					for (var i=0; i<transports.length; i++) {
-						for (var j = 0; j < villages.length; j++) {
+					for (let i=0; i<transports.length; i++) {
+						for (let j=0; j<villages.length; j++) {
 							if (villages[j].ID == transports[i].villageID) {
-								for (var k=0; k<3; k++) {
+								for (let k=0; k<3; k++) {
 									villages[j].resources.comming[k] += transports[i].resources[k];
 									villages[j].resources.owned[k] += transports[i].resources[k];
 								}
@@ -1363,47 +1431,55 @@ var DysponentSurowcowy = {
 				reduceSums: function (transports) {
 					Debugger.logLine("reduceSums()");
 
-					for (var i=0; i<transports.length-1; i++) {
-						for (var j=i+1; j<transports.length; j++) {
+					let swapDone = false;
+
+					for (let i=0; i<transports.length-1; i++) {
+						for (let j=i+1; j<transports.length; j++) {
 							if (transports[i].origin == transports[j].destination) { continue; }
 							if (transports[j].origin == transports[i].destination) { continue; }
+							if (transports[i].origin == transports[j].origin) { continue; }
+							if (transports[i].destination == transports[j].destination) { continue; }
 
-							var potentialSumDist = 0;
+							let potentialSumDist = 0;
 							potentialSumDist += Utilities.distance(transports[i].origin.coords, transports[j].destination.coords);
 							potentialSumDist += Utilities.distance(transports[j].origin.coords, transports[i].destination.coords);
 
 							if (potentialSumDist < transports[i].distance + transports[j].distance) {
-								var reduction = [0,0,0];
+								let reduction = [0,0,0];
 
-								for (var k=0; k<3; k++) {
+								for (let k=0; k<3; k++) {
 									reduction[k] = Math.min(transports[i].resources[k], transports[j].resources[k]);
 								}
 
 								if (reduction[0]+reduction[1]+reduction[2] == 0) { continue; }
 
 								Debugger.logLine("reduceSums() | transport swap found");
+								swapDone = true;
+								
+								Script.transportsHandler.reduceTransport(reduction, transports, i);
+								Script.transportsHandler.reduceTransport(reduction, transports, j);
 
-								Script.transportsHandler.reduceTransport(reduction, transports[i]);
-								Script.transportsHandler.reduceTransport(reduction, transports[j]);
+								for (let k=0; k<2; k++) {
+									let resources = [reduction[0], reduction[1], reduction[2]];
+									let origin = 		transports[i*(k) + j*(1-k)].origin;
+									let destination =	transports[j*(k) + i*(1-k)].destination;
 
-								for (var k=0; k<2; k++) {
-									var resources = [reduction[0], reduction[1], reduction[2]];
-									var origin = 		transports[i*(k) + j*(1-k)].origin;
-									var destination =	transports[j*(k) + i*(1-k)].destination;
+									if(origin === destination) { throw 'reduceSums(): origin === destination'; }
 
-									if(origin === destination) { throw 'ERROR: reduceSums(): origin === destination'; }
-
-									var l = Script.transportsHandler.addTransport(transports, resources, origin, destination);
-									Script.villagesHandler.updateVillages(transports[l-1], 1);
+									Script.transportsHandler.addTransport(transports, resources, origin, destination);
 								}
+								if (Settings.debug) { Debugger.verifyTransports(transports); }
 							}
 						}
 					}
+
+					if (swapDone) { Debugger.verifyTransports(transports); }
 				},
 				merge: function (transports) {
 					Debugger.logLine("merge()");
-
+					let mergeDone = false;
 					transports.sort(Script.transportsHandler.compareTransports.route);
+					Debugger.verifyTransports(transports);
 
 					function if_same_route(tA, tB) {
 						if (tA.destination.ID	!= tB.destination.ID)	{ return false; }
@@ -1411,32 +1487,38 @@ var DysponentSurowcowy = {
 						return true;
 					}
 
-					var counter_1 = 0;
-					for (var i=0; i < transports.length-1; i++) {
-						if(counter_1++ > 1000) { throw 'ERROR: merge(): for_1 is infinite'; }
+					let counter_1 = 0;
+					for (let i=0; i < transports.length-1; i++) {
+						if(counter_1++ > 1000) { throw 'merge(): for_1 is infinite'; }
 						if (if_same_route(transports[i], transports[i+1])) {
-							Debugger.logLine("merge() | merging");
+							Debugger.logLine("merge() | merging i: " + i + ", i+1: " + (i+1));
+							mergeDone = true;
 							let resources = [0,0,0];
-							for (var j=0; j<3; j++) { resources[j] = transports[i].resources[j] + transports[i+1].resources[j];	}
+							for (let j=0; j<3; j++) { resources[j] = transports[i].resources[j] + transports[i+1].resources[j];	}
 
 							Script.transportsHandler.addTransport(transports, resources, transports[i].origin, transports[i].destination);
 
+							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
 							transports.shift();
+							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
 							transports.shift();
 
-							if(transports.length == 1) {
-								break;
-							}
+							if(transports.length == 1) { break;	}
 
 							transports.sort(Script.transportsHandler.compareTransports.route);
 							i--;
+
+							if (Settings.debug) { Debugger.verifyTransports(transports); }
 						}
 					}
+
+					if (mergeDone) { Debugger.verifyTransports(transports); }
 				},
 				reduceOpposing: function (transports) {
 					Debugger.logLine("reduceOpposing()");
+					let reductionDone = false;
 
 					function if_opposinge_route(tA, tB) {
 						if (tA.destination.ID	!= tB.origin.ID)	{ return false; }
@@ -1444,102 +1526,134 @@ var DysponentSurowcowy = {
 						return true;
 					}
 
-					for (var i=0; i < transports.length - 1; i++) {
-						for (var j = i+1; j < transports.length; j++) {
+					for (let i=0; i < transports.length - 1; i++) {
+						for (let j = i+1; j < transports.length; j++) {
 							if (if_opposinge_route(transports[i], transports[j])) {
-								var reduction = [0,0,0];
+								let reduction = [0,0,0];
+								let reduction_sum = 0;
 
-								for (var k=0; k<3; k++) {
+								for (let k=0; k<3; k++) {
 									reduction[k] = Math.min(transports[i].resources[k], transports[j].resources[k]);
+									reduction_sum += reduction[k];
 								}
+								if (reduction_sum == 0) { continue; }
 
-								Debugger.logLine("reduceOpposing() | reduction ("+reduction[0]+","+reduction[1]+","+reduction[2]+")");
+								Debugger.logLine('reduceOpposing() | reduction ('+reduction[0]+','+reduction[1]+','+reduction[2]+')');
+								reductionDone = true;
 
-								Script.transportsHandler.reduceTransport(reduction, transports[i]);
-								Script.transportsHandler.reduceTransport(reduction, transports[j]);
+								if (reduction_sum < 0) { throw 'Calculated reduction sum is negative! - reduction: ('+reduction[0]+','+reduction[1]+','+reduction[2]+')'; }
+
+								Script.transportsHandler.reduceTransport(reduction, transports, i);
+								Script.transportsHandler.reduceTransport(reduction, transports, j);
+
+								if (Settings.debug) { Debugger.verifyTransports(transports); }
 							}
 						}
 					}
+
+					if (reductionDone) { Debugger.verifyTransports(transports); }
 				},
 				removeEmptys: function (transports) {
 					Debugger.logLine("removeEmptys()");
+					let removalDone = false;
 
-					var counter_1 = 0;
-					for (var i=0; i<transports.length; i++) {
-						if(counter_1++ > 1000) { throw 'ERROR: removeEmptys(): for_1 is infinite'; }
+					let counter_1 = 0;
+					for (let i=0; i<transports.length; i++) {
+						if(counter_1++ > 1000) { throw 'removeEmptys(): for_1 is infinite'; }
 						if (transports[i].traders == 0) {
 							Debugger.logLine("removeEmptys() | removal");
+							removalDone = true;
+							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
 							transports.shift();
 							i--;
+							if (Settings.debug) { Debugger.verifyTransports(transports); }
 						}
 					}
+
+					if (removalDone) { Debugger.verifyTransports(transports); }
 				},
 				init: function (transports) {
 					Debugger.logLine("normalization.init()");
 
-					if (transports.length < 2) { return; }
-					this.reduceSums(transports);
-					this.merge(transports);
-					this.reduceOpposing(transports);
-					this.removeEmptys(transports);
+					if (transports.length >= 1) {
+						this.removeEmptys(transports);
+					}
+					if (transports.length >= 2) {
+						this.merge(transports);
+					}
+					if (transports.length >= 2) {
+						this.reduceSums(transports);
+						this.removeEmptys(transports);
+					}
+					if (transports.length >= 2) {
+						this.merge(transports);
+					}
+					if (transports.length >= 2) {
+						this.reduceOpposing(transports);
+						this.removeEmptys(transports);
+					}
+					
 				}
 			},
 			optimization: {
 				removeSuboptimalBrokers () {
 					Debugger.logLine("removeSuboptimalBrokers()");
 
-					var transports = Script.transportsHandler.generalTransports;
+					let transports = Script.transportsHandler.generalTransports;
+					let newTransport = false;
 
-					var newTransport = false;
-
-					for	(var i=0; i<transports.length; i++) {
-						for (var j=0; j<transports.length; j++) {
+					for	(let i=0; i<transports.length; i++) {
+						for (let j=0; j<transports.length; j++) {
 							if (transports[i].destination == transports[j].origin) {
 								let potShortcutDist = Utilities.distance(transports[i].origin.coords, transports[j].destination.coords);
 								if (2 * potShortcutDist < transports[i].distance + transports[j].distance) {
-									var res = [0,0,0];
-									for (var k=0; k<3; k++) { res[k] = Math.min(transports[i].resources[k], transports[j].resources[k]); }
+									let res = [0,0,0];
+									for (let k=0; k<3; k++) { res[k] = Math.min(transports[i].resources[k], transports[j].resources[k]); }
 
-									var resSum = res[0] + res[1] + res[2];
+									let resSum = res[0] + res[1] + res[2];
 									if (resSum > 0) {
 										Debugger.logLine("removeSuboptimalBrokers() | shortcut found!");
-										Script.transportsHandler.reduceTransport(res, transports[i]);
-										Script.transportsHandler.reduceTransport(res, transports[j]);
+										Script.transportsHandler.reduceTransport(res, transports, i);
+										Script.transportsHandler.reduceTransport(res, transports, j);
 
-										if(transports[i].origin == transports[j].destination) { throw 'ERROR: removeSuboptimalBrokers(): origin === destination'; }
+										if(transports[i].origin == transports[j].destination) { throw 'removeSuboptimalBrokers(): origin === destination'; }
 										
-										var l = Script.transportsHandler.addTransport(transports, res, transports[i].origin, transports[j].destination);
-										Script.villagesHandler.updateVillages(transports[l-1], 1);
+										Script.transportsHandler.addTransport(transports, res, transports[i].origin, transports[j].destination);
 
 										newTransport = true;
+
+										if (Settings.debug) { Debugger.verifyTransports(transports); }
 									}
 								}
 							}
 						}
 					}
 
-					if(newTransport) { Script.planOptimizer.normalization.init(transports); }
+					if(newTransport) { 
+						Debugger.verifyTransports(transports);
+						Script.planOptimizer.normalization.init(transports);
+					}
 				},
 				relayThroughBrokers () {
-					Debugger.logLine("relayThrougBrokers()");
+					Debugger.logLine("relayThroughBrokers()");
 
-					var villages = Script.villagesHandler.villages;
-					var transports = Script.transportsHandler.generalTransports;
+					let villages = Script.villagesHandler.villages;
+					let transports = Script.transportsHandler.generalTransports;
 					if (transports.length == 0) { return; }
-					
-					var newTransport = false;
 
-					var potBrokers = [];
+					let newTransport = false;
+
+					let potBrokers = [];
 
 					if (Settings.extendedOptimization) {
-						for (var i=0; i<villages.length; i++) {
+						for (let i=0; i<villages.length; i++) {
 							if (villages[i].traders.free > Settings.tradersSafeguard) {
 								potBrokers.push(villages[i]);
 							}
 						}
 					} else {
-						for (var i=0; i<villages.length; i++) {
+						for (let i=0; i<villages.length; i++) {
 							if (!villages[i].receiver) { continue; }
 							if (villages[i].traders.free > Settings.tradersSafeguard) {
 								potBrokers.push(villages[i]);
@@ -1547,33 +1661,36 @@ var DysponentSurowcowy = {
 						}
 					}
 
-					var refTrans = null;
+					let refTrans = null;
 
 					function maxDistRelay(village) { return Math.max(Utilities.distance(refTrans.origin.coords, village.coords), Utilities.distance(village.coords, refTrans.destination.coords));	}
 					function comparePotentialBrokers(vA, vB) {	return maxDistRelay(vA) - maxDistRelay(vB);	}
 
-					for (var i=0; i<transports.length; i++) {
+					for (let i=0; i<transports.length; i++) {
+						Debugger.logLine('relayThroughBrokers() i=' + i);
 						transports.sort(Script.transportsHandler.compareTransports.cost);
 						if (transports[1] && Script.transportsHandler.transportCost(transports[0]) < Script.transportsHandler.transportCost(transports[1])) {
-							throw 'ERROR: relayThroughBrokers() transports sort failed';
+							throw 'relayThroughBrokers() transports sort failed';
 						}
 
 						refTrans = transports[i];
 						potBrokers.sort(comparePotentialBrokers);
 						if (potBrokers[1] && maxDistRelay(potBrokers[0]) > maxDistRelay(potBrokers[1])) {
-							throw 'ERROR: relayThroughBrokers() potBrokers sort failed';
-						}
+							throw 'relayThroughBrokers() potBrokers sort failed';
+						}			
 
-						for (var j=0; j<potBrokers.length; j++) {
+						for (let j=0; j<potBrokers.length; j++) {
 							if (maxDistRelay(potBrokers[j]) >= refTrans.distance) { break; }
 
-							var res = [1000,1000,1000];
-							var traders = 0;
-							for (var k=0; k<3; k++) {
+							let res = [1000,1000,1000];
+							let res2 = [0,0,0];
+							let traders = 0;
+							for (let k=0; k<3; k++) {
 								res[k] = Math.min(res[k], transports[i].resources[k]);
 								res[k] = Math.min(res[k], potBrokers[j].resources.present[k] - Settings.resourcesRelayBuffer[k]);
 								if (res[k] < 1000) { res[k] = 0; }
 								traders += res[k] / 1000;
+								res2[k] = res[k];
 							}
 							if (traders == 0) {
 								continue;
@@ -1585,24 +1702,29 @@ var DysponentSurowcowy = {
 								continue;
 							}
 
-							Script.transportsHandler.reduceTransport(res, transports[i]);
+							if (res[0]+res[1]+res[2]<=0) {
+								throw 'reduction is <= 0';
+							}
 
-							Debugger.logLine('relayThrougBrokers() | relay created!');
+							Debugger.logLine('relayThrougBrokers() | relay created for ' + i + ' !');
 
-							if(transports[i].origin == potBrokers[j]) { throw 'ERROR: relayThrougBrokers(): origin === destination (1)'; }
-							var l = Script.transportsHandler.addTransport(transports, res, transports[i].origin, potBrokers[j]);
-							Script.villagesHandler.updateVillages(transports[l-1], 1);
+							if(transports[i].origin === potBrokers[j]) { throw 'relayThrougBrokers(): origin === destination (1)'; }
+							Script.transportsHandler.addTransport(transports, res, transports[i].origin, potBrokers[j]);
 
-							if(potBrokers[j] == transports[i].destination) { throw 'ERROR: relayThrougBrokers(): origin === destination (2)'; }
-							l = Script.transportsHandler.addTransport(transports, res, potBrokers[j], transports[i].destination);
-							Script.villagesHandler.updateVillages(transports[l-1], 1);
+							if(potBrokers[j] === transports[i].destination) { throw 'relayThrougBrokers(): origin === destination (2)'; }
+							Script.transportsHandler.addTransport(transports, res2, potBrokers[j], transports[i].destination);
+
+							Script.transportsHandler.reduceTransport(res, transports, i);
 
 							newTransport = true;
 							i--;
+
+							if (Settings.debug) { Debugger.verifyTransports(transports); }
 							break;
 						}
 					}
 
+					Debugger.verifyTransports(transports);
 					if (newTransport) {	Script.planOptimizer.normalization.init(transports); }
 				},
 				init: function () {
@@ -1631,7 +1753,7 @@ var DysponentSurowcowy = {
 
 				function reload() {
 					Debugger.logLine('reload()');
-					var url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination;
+					let url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination;
 					if (Script.plan.group) { url += '&group=' + Script.plan.group; }
 					location = url;
 				}
@@ -1654,11 +1776,11 @@ var DysponentSurowcowy = {
 
 				if(this.setVillageAndGroup()) { return; }
 
-				var summon = Script.plan.summons[0];
-				var inputs = $('#village_list tbody tr td input');
+				let summon = Script.plan.summons[0];
+				let inputs = $('#village_list tbody tr td input');
 
-				for (var i=0; i<summon.transports.length; i++) {
-					for (var j=0; j<inputs.length; j++) {
+				for (let i=0; i<summon.transports.length; i++) {
+					for (let j=0; j<inputs.length; j++) {
 						if (inputs[j].type == 'checkbox' && inputs[j].value == summon.transports[i].origin) {
 							$(inputs[j]).trigger('click');
 							$(inputs[j-1]).val(summon.transports[i].resources[2]);
@@ -1686,11 +1808,11 @@ var DysponentSurowcowy = {
 							Script.planExecutor.setVillageAndGroup();
 						} catch (ex) { Debugger.handle_error(ex); }
 					});
-					var progress = Script.plan.summoned / (Script.plan.summoned+Script.plan.summons.length);
+					let progress = Script.plan.summoned / (Script.plan.summoned+Script.plan.summons.length);
 					progress *= 25;
 					progress = Math.floor(progress);
-					var message = 'Dysponent Surowcowy: '
-					for (var i=1; i<=25; i++) {
+					let message = 'Dysponent Surowcowy: '
+					for (let i=1; i<=25; i++) {
 						if (i<=progress) {
 							message += '\u2B22';
 							continue;
@@ -1700,9 +1822,8 @@ var DysponentSurowcowy = {
 					UI.SuccessMessage(message, 10000);
 				} else {
 					$('.btn')[0].addEventListener('click', async function () {
-						try {
-							Script.planCreator.savePlan();
-						} catch (ex) { Debugger.handle_error(ex); }
+						try { Script.planCreator.savePlan(); }
+						catch (ex) { Debugger.handle_error(ex); }
 					});
 					UI.SuccessMessage('Dysponent Surowcowy: To ju\u017C ostatnie transporty!', 10000);
 				}
