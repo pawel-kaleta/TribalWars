@@ -1370,9 +1370,9 @@ var DysponentSurowcowy = {
 				UI.SuccessMessage('Plan utworzony. Liczba transport\xF3w: ' + allTransports.length, 10000);
 				Script.gui.activate_buttons();
 
-				//if (Settings.debug) { 
+				if (Settings.debug) { 
 					throw 'DEBUGOWANIE';
-				//}
+				}
 			},
 			loadGroup: function () {
 				Debugger.logLine('loadGroup()');
