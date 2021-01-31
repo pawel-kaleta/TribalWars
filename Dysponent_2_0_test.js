@@ -1535,7 +1535,6 @@ var DysponentSurowcowy = {
 							let resources = [0,0,0];
 							for (let j=0; j<3; j++) { resources[j] = transports[i].resources[j] + transports[i+1].resources[j];	}
 
-							Script.transportsHandler.addTransport(transports, resources, transports[i].origin, transports[i].destination);
 
 							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
@@ -1543,6 +1542,8 @@ var DysponentSurowcowy = {
 							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
 							transports.shift();
+
+							Script.transportsHandler.addTransport(transports, resources, transports[i].origin, transports[i].destination);
 
 							if(transports.length == 1) { break;	}
 
