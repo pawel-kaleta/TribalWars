@@ -940,7 +940,7 @@ var DysponentSurowcowy = {
 			addTransport: function (_transports, _resources, _origin, _destination) {
 				Debugger.logLine('addTransport()');
 
-				if (_origin === _destination) {
+				if (_origin.ID == _destination.ID) {
 					Debugger.logLine('resources: ' + _resources[0] + ',' + _resources[1] + ',' + _resources[2] + ', coords: (' + _origin.coords.x + '|' + _origin.coords.y + '), ' + ' ID: ' + _origin.ID);
 					throw 'Pr\xF3ba utworzenia transportu z tej samej do tej samej wioski!';
 				 }
