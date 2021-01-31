@@ -906,7 +906,12 @@ var DysponentSurowcowy = {
 					if (destination.resources.toGet[i] > 0) {
 						destination.receiver = true;
 					}
+
+					if (origin.resources.present[i] < 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci surowc\xF3w!'; }
+					if (origin.resources.owned[i] < Settings.resourcesSafeguard[i]) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci surowc\xF3w mniejszej ni\u017C resourcesSafeguard!'; }
 				}
+
+				if (origin.traders.free <= 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci kupc\xF3w!'; }
 			},
 			compareVillages: {
 				refCoords: { x: 0, y: 0},
