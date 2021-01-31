@@ -890,28 +890,28 @@ var DysponentSurowcowy = {
 				let origin 		= transport.origin;
 				let destination	= transport.destination;
 				destination.receiver = false;
+
 				for (let i=0; i<3; i++) {
-					var change = {
-						resources: transport.resources[i]*plus_minus_1,
-						traders: transport.traders*plus_minus_1
-					};
-					origin.resources.present[i] -= change.resources;
-					origin.resources.owned[i] -= change.resources;
-					origin.resources.toSend[i] += change.resources;
-					origin.traders.free -= change.traders;
-					origin.traders.toUse += change.traders;
+					var change = transport.resources[i]*plus_minus_1;
+
+					origin.resources.present[i] -= change;
+					origin.resources.owned[i] -= change;
+					origin.resources.toSend[i] += change;
 
 					destination.resources.toGet[i] += change.resources;
 					destination.resources.owned[i] += change.resources;
-					if (destination.resources.toGet[i] > 0) {
-						destination.receiver = true;
-					}
+					if (destination.resources.toGet[i] > 0) { destination.receiver = true; }
 
-					if (origin.resources.present[i] < 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci surowc\xF3w!'; }
-					if (origin.resources.owned[i] < Settings.resourcesSafeguard[i]) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci surowc\xF3w mniejszej ni\u017C resourcesSafeguard!'; }
+					if (origin.resources.present[i] < 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej liczby surowc\xF3w!'; }
+					if (origin.resources.owned[i] < Settings.resourcesSafeguard[i]) { throw 'Zaktualizowano informacje o wiosce do ujemnej liczby surowc\xF3w mniejszej ni\u017C resourcesSafeguard!'; }
 				}
 
-				if (origin.traders.free <= 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej warto\u015Bci kupc\xF3w!'; }
+				let traders = transport.traders*plus_minus_1
+				origin.traders.free -= traders;
+				origin.traders.toUse += traders;
+				
+				if (origin.traders.free <= 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej liczby kupc\xF3w!'; }
+				if (origin.traders.free > origin.traders.all) { throw 'Zaktualizowano informacje o wiosce do liczby kupc\xF3w wi\u0119kszej, ni\u017C dost\u0119pna!'; }
 			},
 			compareVillages: {
 				refCoords: { x: 0, y: 0},
