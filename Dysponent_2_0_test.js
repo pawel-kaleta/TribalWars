@@ -1833,7 +1833,7 @@ var DysponentSurowcowy = {
 				buttons[0].focus();
 				if (Script.plan.summons[0]) {
 					//for (button of buttons) {
-						button[0].addEventListener('click', async function () {
+						buttons[0].addEventListener('click', async function () {
 							try {
 								Script.planCreator.savePlan();
 								Script.planExecutor.setVillageAndGroup();
@@ -1854,7 +1854,7 @@ var DysponentSurowcowy = {
 					UI.SuccessMessage(message, 10000);
 				} else {
 					//for (button of buttons) {
-						button[0].addEventListener('click', async function () {
+						buttons[0].addEventListener('click', async function () {
 							try { Script.planCreator.savePlan(); }
 							catch (ex) { Debugger.handle_error(ex); }
 						});
