@@ -910,7 +910,7 @@ var DysponentSurowcowy = {
 				origin.traders.free -= traders;
 				origin.traders.toUse += traders;
 				
-				if (origin.traders.free <= 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej liczby kupc\xF3w!'; }
+				if (origin.traders.free < 0) { throw 'Zaktualizowano informacje o wiosce do ujemnej liczby kupc\xF3w!'; }
 				if (origin.traders.free > origin.traders.all) { throw 'Zaktualizowano informacje o wiosce do liczby kupc\xF3w wi\u0119kszej, ni\u017C dost\u0119pna!'; }
 			},
 			compareVillages: {
