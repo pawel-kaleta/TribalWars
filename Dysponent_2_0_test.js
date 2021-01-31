@@ -1133,7 +1133,12 @@ var DysponentSurowcowy = {
 							continue;
 						}
 
-						if(surpluses[0] === receiver) { throw 'fillVillages(): origin === destination'; }
+						if(surpluses[0] === receiver) { 
+							if (!firstLooper) { firstLooper = surpluses[0]; }
+							surpluses.push(surpluses.shift());
+							Debugger.logLine('fillVillages() while_1 while_2 | (surpluses[0] === receiver) ==> loop');
+							continue;
+						}
 
 						let transportResources = [0,0,0];
 						transportResources[res] = 1000;
