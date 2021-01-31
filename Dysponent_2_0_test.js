@@ -1138,6 +1138,9 @@ var DysponentSurowcowy = {
 						let transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
+						Debugger.logLine('traders.free: ' + surpluses[0].traders.free);
+						console.log(surpluses[0].traders.free);
+
 						Script.transportsHandler.addTransport(transports, transportResources, surpluses[0], receiver);
 						Debugger.logLine('fillVillages() while_1 while_2 | NEW TRANSPORT');
 						createdTransport = true;
