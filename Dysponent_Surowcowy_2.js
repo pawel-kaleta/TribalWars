@@ -1827,7 +1827,7 @@ var DysponentSurowcowy = {
 				buttons[0].focus();
 				if (Script.plan.summons[0]) {
 					for (button of buttons) {
-						buttons.addEventListener('click', async function () {
+						button.addEventListener('click', async function () {
 							try {
 								Script.planCreator.savePlan();
 								Script.planExecutor.setVillageAndGroup();
