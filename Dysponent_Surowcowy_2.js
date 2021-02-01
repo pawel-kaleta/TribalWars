@@ -1965,6 +1965,8 @@ var DysponentSurowcowy = {
 //			> bug fix - updateVillages no longer updates traders 3 times
 //			> bug fix - relayThroughBrokers now verifies free traders of broker
 //			> bug fix - wrong village labels in plan table GUI (usage of an iterator of a different loop)
-//		2.0.6.2 - 2.02.2021 by PabloCanaletto
+//		2.0.6.2 - 1.02.2021 by PabloCanaletto
 //			> bug fix - loadSetting() was operating on copies of pimitives from Settings {}
 //			> character escapes in stats panel
+//			> added some more debug and logging
+//			> debug log formatting
