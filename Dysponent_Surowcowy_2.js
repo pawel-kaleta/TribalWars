@@ -9,7 +9,7 @@ javascript:
 /*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYSLNE
-	resourcesFillTo: [35000, 40000, 45000],		// wypełniaj do tej wartości
+	resourcesFillTo: [20000, 25000, 25000],		// wypełniaj do tej wartości
 	resourcesSafeguard: [2000, 2000, 2000],		// zabezpieczenie w surowcach, wypelniane priorytetowo
 	tradersSafeguard: 0,						// zabezpieczenie w kupcach
 	considerOngoingTransports: true,			// uwzglednij przychodzace transporty (tak - true, nie - false)
@@ -87,7 +87,8 @@ var DysponentSurowcowy = {
 
 			let errors = [];
 			for (let i=0; i<transports.length; i++) {
-				if (Settings.debug) { this.logLine( '	' + i + '  origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders ); }
+				//if (Settings.debug) { this.logLine( '	' + i + '  origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders ); }
+				if (transports[i].origin.ID == transports[i].destination.ID) { errors.push('origin === destination'); }
 				if (transports[i].resources[0] < 0) { errors.push('Wood is negative! '	+i); }
 				if (transports[i].resources[1] < 0) { errors.push('Stone is negative! '	+i); }
 				if (transports[i].resources[2] < 0) { errors.push('Iron is negative! '	+i); }
@@ -710,7 +711,7 @@ var DysponentSurowcowy = {
 						village_label.colSpan = '2';
 						for (let k=0; k<Script.villagesHandler.villages.length; k++) {
 							if (Script.villagesHandler.villages[k].ID == summons[i].transports[j].origin) {
-								village_label.innerHTML = Script.villagesHandler.villages[j].label;
+								village_label.innerHTML = Script.villagesHandler.villages[k].label;
 								break;
 							}
 						}
@@ -1718,9 +1719,13 @@ var DysponentSurowcowy = {
 								res2[k] = res[k];
 							}
 							if (traders == 0) {
+								if (Settings.debug) {
+									Debugger.logLine('relayThrougBrokers() | (traders == 0) => continue');
+								}
 								continue;
 							}
-							if (traders >= potBrokers[j].traders.free - Settings.tradersSafeguard) {
+							if (traders > potBrokers[j].traders.free - Settings.tradersSafeguard) {
+								if (Settings.debug) { Debugger.logLine('relayThrougBrokers() | (traders > traders.free - Safeguard) => shift()'); }
 								Utilities.swap(potBrokers, 0, j);
 								potBrokers.shift();
 								j--;
@@ -1952,3 +1957,4 @@ var DysponentSurowcowy = {
 //			> bug fix - preventOverfloving no longer leaves less then safeguard
 //			> bug fix - updateVillages no longer updates traders 3 times
 //			> bug fix - relayThroughBrokers now verifies free traders of broker
+//			> bug fix - wrong village labels in plan table GUI (usage of an iterator of a different loop)
