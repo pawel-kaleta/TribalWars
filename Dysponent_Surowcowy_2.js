@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.6.1 (beta)
+//	version:	2.0.6.2 (beta)
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -22,7 +22,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.6.1 (beta)';
+	const version = 'v2.0.6.2 (beta)';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -60,14 +60,14 @@ var DysponentSurowcowy = {
 					<br/>
 					<strong>${error}</strong><br/>
 					<br/>
-					Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji napisz zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy Komunikat o B\u0142\u0119dzie.<br/>
+					Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji mo\u017Cesz napisa\u0107 zg\u0142oszenie za\u0142\u0105czaj\u0105c poni\u017Cszy Komunikat o B\u0142\u0119dzie.<br/>
 					<br/>
 					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do w\u0105tku na forum</a><br/>
 					<br/>
 					<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
 					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n\n${stack}</textarea><br/>
 					<br/>
-					Pomocny mo\u017Ce okaza\u0107 si\u0119 tak\u017Ce pe\u0142ny Debug Log z dzia\u0142ania skryptu, ale ten prawdopodobnie jest znacznie d\u0142u\u017Cszy.<br/>
+					Pomocny mo\u017Ce okaza\u0107 si\u0119 tak\u017Ce pe\u0142ny Debug Log z dzia\u0142ania skryptu, ale ten prawdopodobnie jest znacznie d\u0142u\u017Cszy i mo\u017Ce nie zmie\u015Bci\u0107 si\u0119 w po\u015Bcie na forum.<br/>
 					<br/>
 					<strong>Debug Log:</strong><br/>
 					<textarea rows='5' cols='100'>[spoiler=Debug Log][code]${Debugger.saveLog()}[/code]</textarea>
@@ -83,11 +83,11 @@ var DysponentSurowcowy = {
 		},
 		verifyTransports: function (transports) {
 			this.logLine('verifyTransports()');
-			this.logLine('	Number of transports: ' + transports.length);
+			this.logLine('	Number of transports: ' + transports.length + ' {');
 
 			let errors = [];
 			for (let i=0; i<transports.length; i++) {
-				//if (Settings.debug) { this.logLine( '	' + i + '  origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders ); }
+				if (Settings.debug) { this.logLine( '	' + i + '  origin: ' + transports[i].origin.ID + ' destination: ' + transports[i].destination.ID + ' (' + transports[i].resources[0] + ',' + transports[i].resources[1] + ',' + transports[i].resources[2] + ')' + ' traders: ' + transports[i].traders ); }
 				if (transports[i].origin.ID == transports[i].destination.ID) { errors.push('origin === destination'); }
 				if (transports[i].resources[0] < 0) { errors.push('Wood is negative! '	+i); }
 				if (transports[i].resources[1] < 0) { errors.push('Stone is negative! '	+i); }
@@ -108,6 +108,7 @@ var DysponentSurowcowy = {
 				while (errors[0]) { this.logLine(errors.shift()); }
 				throw 'Opracowano niemo\u017Cliwy transport!';
 			}
+			this.logLine('}');
 		}
 	};
 	const Utilities = {
@@ -243,6 +244,7 @@ var DysponentSurowcowy = {
 			},
 			gather_stats: function (panel_data) {
 				Debugger.logLine('gather_stats()');
+
 				let villages = Script.villagesHandler.villages;
 				let transports = Script.transportsHandler.ongoingTransports;
 
@@ -273,6 +275,7 @@ var DysponentSurowcowy = {
 			},
 			create_stats_panel: function () {
 				Debugger.logLine('create_stats_panel()');
+
 				const panel = document.createElement('div');
 				panel.classList.add('vis', 'vis_item');
 
@@ -345,7 +348,7 @@ var DysponentSurowcowy = {
 							<td colspan="8"></th>
 						</tr>
 						<tr>
-							<th colspan="8" style="text-align: center">Surowce średnio na wioskę</th>
+							<th colspan="8" style="text-align: center">Surowce \u015Brednio na wiosk\u0119</th>
 						</tr>
 						<tr>
 							<th colspan="3" style="text-align: center">W wiosce</th>
@@ -378,14 +381,14 @@ var DysponentSurowcowy = {
 							<th colspan="2" style="text-align: center">Pojemno\u015B\u0107 spichlerzy</th>
 						</tr>
 						<tr>
-							<th style="text-align: center">Dostępni</th>
-							<th style="text-align: center">Niedostępni</th>
+							<th style="text-align: center">Dost\u0119pni</th>
+							<th style="text-align: center">Niedost\u0119pni</th>
 							<th style="text-align: center">Razem</th>
-							<th style="text-align: center">Dostępni</th>
-							<th style="text-align: center">Niedostępni</th>
+							<th style="text-align: center">Dost\u0119pni</th>
+							<th style="text-align: center">Niedost\u0119pni</th>
 							<th style="text-align: center">Razem</th>
 							<th style="text-align: center">Sumaryczna</th>
-							<th style="text-align: center">Średnia</th>
+							<th style="text-align: center">\u015Arednia</th>
 						</tr>
 						<tr class="row_b">
 							<td style="text-align: center">${panel_data.trad_sum_in}</td>
@@ -541,21 +544,26 @@ var DysponentSurowcowy = {
 						setting = Settings[option.controls[0].attributes.id];
 						if (option.controls[0].attributes.type == 'checkbox') {
 							setting = $('#'+option.controls[0].attributes.id)[0].checked;
+							Debugger.logLine(option.controls[0].attributes.id + ': ' + setting);
 						}
 						else {
 							setting = Number($('#'+option.controls[0].attributes.id)[0].value);
+							Debugger.logLine(option.controls[0].attributes.id + ': ' + setting);
 							if (setting == NaN || setting < 0) { throw 'Niew\u0142a\u015Bciwa warto\u015B\u0107 ustawienia "' + option.controls[0].attributes.id +'".' }
 						}
+						Settings[option.controls[0].attributes.id] = setting;
 					}
 					else {
 						setting = Settings[option.controls[0].attributes.id.split("_")[0]];
 						for (let i=0; i<3; i++) {
 							setting[i] = Number($('#'+option.controls[i].attributes.id)[0].value);
+							Debugger.logLine(option.controls[0].attributes.id + ': ' + setting[i]);
 							if (setting[i] == NaN || setting[i] < 0 || setting[i] > 700000) { throw 'Niew\u0142a\u015Bciwa warto\u015B\u0107 ustawienia "' + option.controls[0].attributes.id +'".' }
 						}
 					}
 				}
 				if (Settings.overFlowThreshold > 100) { Settings.overFlowThreshold = 100; }
+
 			},
 			activate_buttons: function () {
 				Debugger.logLine('activate_buttons()');
@@ -578,7 +586,7 @@ var DysponentSurowcowy = {
 			create_gui: async function () {
 				try {
 					Debugger.logLine('create_gui()');
-					await Settings.loadDefaults();
+					if (!Settings.isNewerVersion()) { await Settings.loadDefaults(); }
 					
 					this.options = [
 						{
@@ -862,7 +870,7 @@ var DysponentSurowcowy = {
 
 					if (destination.resources.toGet[i] > 0) { destination.receiver = true; }
 
-					if (change == 0) { continue; }
+					if (change <= 0) { continue; }
 					if (origin.resources.present[i] < Settings.resourcesSafeguard[i]) {
 						Debugger.logLine('i: ' + i + ', present: ' + origin.resources.present[i] + ', change: ' + change);
 						throw 'Zaktualizowano informacje o wiosce do obecnej liczby surowc\xF3w mniejszej, ni\u017C resourcesSafeguard!';
@@ -927,7 +935,7 @@ var DysponentSurowcowy = {
 				});
 
 				let addedTransport = _transports[l-1];
-				Debugger.logLine('NEW TRANSPORT: (' + addedTransport.resources[0] + ',' + addedTransport.resources[1] + ',' + addedTransport.resources[2] + ')' + ' traders:' + addedTransport.traders);
+				Debugger.logLine('	NEW TRANSPORT: (' + addedTransport.resources[0] + ',' + addedTransport.resources[1] + ',' + addedTransport.resources[2] + ')' + ' traders:' + addedTransport.traders);
 				Script.villagesHandler.updateVillages(addedTransport, 1);
 
 				return addedTransport;
@@ -947,9 +955,9 @@ var DysponentSurowcowy = {
 			reduceTransport: function (reduction, transports, i) {
 				Debugger.logLine('reduceTransport()');
 
-				Debugger.logLine('Reduction: i: ' + i + ', (' + reduction[0] +','+ reduction[1] +','+ reduction[2] + '), origin: ' + transports[i].origin.ID + ', destination: ' + transports[i].destination.ID);
+				Debugger.logLine('	Reduction: i: ' + i + ', (' + reduction[0] +','+ reduction[1] +','+ reduction[2] + '), origin: ' + transports[i].origin.ID + ', destination: ' + transports[i].destination.ID);
 
-				if( reduction[0]<0 || reduction[1] < 0 || reduction[2] < 0 ) {
+				if( reduction[0]<0 || reduction[1]<0 || reduction[2]<0 ) {
 					throw 'Pr\xF3ba zredukowania transportu o ujemn\u0105 warto\u015B\u0107! - redukcja: ' + reduction[0] + ',' + reduction[1] + ',' + reduction[0];
 				}
 				if(reduction[0]+reduction[1]+reduction[2] <= 0) { throw 'Pr\xF3ba zredukowania transportu o 0! - redukcja: ' + reduction[0] + ',' + reduction[1] + ',' + reduction[0]; }
@@ -1041,7 +1049,7 @@ var DysponentSurowcowy = {
 				}
 
 				let counter_1 = 0
-				Debugger.logLine('fillVillages() while_1');
+				Debugger.logLine('	fillVillages() while_1');
 				while (	anyShortage() && surpluses.length > 0 ) {
 					if(counter_1++ > 1000) { throw 'fillVillages(): '; }
 					let receiver = null;
@@ -1071,14 +1079,14 @@ var DysponentSurowcowy = {
 
 					lack -= receiver.resources.owned[res];
 					if (lack < 1000) {
-						Debugger.logLine('fillVillages() while_1 | (lack < 0) ==> shift()');
+						Debugger.logLine('		fillVillages() while_1 | (lack < 0) ==> shift()');
 						shortages[res].shift();
 						continue;
 					}
 
 					let firstLooper = null;
 					let counter_2 = 0;
-					Debugger.logLine('fillVillages() while_1 while_2');
+					Debugger.logLine('		fillVillages() while_1 while_2');
 					while (surpluses[0] && surpluses[0] !== firstLooper) {
 						if(counter_2++ > 1000) { throw 'fillVillages(): while_2 is infinite'; }
 
@@ -1087,34 +1095,34 @@ var DysponentSurowcowy = {
 						{
 							if (!firstLooper) { firstLooper = surpluses[0]; }
 							surpluses.push(surpluses.shift());
-							if (Settings.debug) { Debugger.logLine('fillVillages() while_1 while_2 | (spare < 1000) ==> loop'); }
+							if (Settings.debug) { Debugger.logLine('			fillVillages() while_1 while_2 | (spare < 1000) ==> loop'); }
 							continue;
 						}
 						if (surpluses[0].resources.present[res] - 1000 <= Settings.resourcesSafeguard[res]) {
 							if (!firstLooper) { firstLooper = surpluses[0]; }
 							surpluses.push(surpluses.shift());
-							if (Settings.debug) { Debugger.logLine('fillVillages() while_1 while_2 | (present - 1000 < safeguard) ==> loop'); }
+							if (Settings.debug) { Debugger.logLine('			fillVillages() while_1 while_2 | (present - 1000 < safeguard) ==> loop'); }
 							continue;
 						}
 						if (surpluses[0].traders.free - Settings.tradersSafeguard <= 0) {
-							if (Settings.debug) { Debugger.logLine('fillVillages() while_1 while_2 | (traders.free - tradersSafeguard <= 0) ==> shift()'); }
+							if (Settings.debug) { Debugger.logLine('			fillVillages() while_1 while_2 | (traders.free - tradersSafeguard <= 0) ==> shift()'); }
 							surpluses.shift();
 							continue;
 						}
 						if(surpluses[0] === receiver) { 
 							if (!firstLooper) { firstLooper = surpluses[0]; }
 							surpluses.push(surpluses.shift());
-							if (Settings.debug) { Debugger.logLine('fillVillages() while_1 while_2 | (surpluses[0] === receiver) ==> loop'); }
+							if (Settings.debug) { Debugger.logLine('			fillVillages() while_1 while_2 | (surpluses[0] === receiver) ==> loop'); }
 							continue;
 						}
 
 						let transportResources = [0,0,0];
 						transportResources[res] = 1000;
 
-						Debugger.logLine('traders.free: ' + surpluses[0].traders.free + ', resources: (' + surpluses[0].resources.present[0]+','+surpluses[0].resources.present[1]+','+surpluses[0].resources.present[2] + ')');
+						Debugger.logLine('			traders.free: ' + surpluses[0].traders.free + ', resources: (' + surpluses[0].resources.present[0]+','+surpluses[0].resources.present[1]+','+surpluses[0].resources.present[2] + ')');
 
 						Script.transportsHandler.addTransport(transports, transportResources, surpluses[0], receiver);
-						Debugger.logLine('fillVillages() while_1 while_2 | NEW TRANSPORT');
+						Debugger.logLine('			fillVillages() while_1 while_2 | NEW TRANSPORT');
 						createdTransport = true;
 
 						if (Settings.debug) { Debugger.verifyTransports(transports); }
@@ -1122,20 +1130,20 @@ var DysponentSurowcowy = {
 						break;
 					}
 					if (surpluses[0] && surpluses[0] == firstLooper) {
-						Debugger.logLine('fillVillages() while_1 | (looper) ==> shift()');
+						Debugger.logLine('		fillVillages() while_1 | (looper) ==> shift()');
 						shortages[res].shift();
 					}
 
 					let pointer = 0;
 					let counter_3 = 0;
-					Debugger.logLine('fillVillages() while_1 while_3')
+					Debugger.logLine('		fillVillages() while_1 while_3')
 					while (pointer < shortages[res].length-1) {
 						if(counter_3++ > 1000) { throw 'fillVillages(): while_3 is infinite'; }
 						if (shortages[res][pointer].resources.owned[res] < shortages[res][pointer+1].resources.owned[res]) { 
-							if (Settings.debug) {  Debugger.logLine('fillVillages() while_1 while_3 | end'); }
+							if (Settings.debug) {  Debugger.logLine('			fillVillages() while_1 while_3 | end'); }
 							break;
 						}
-						if (Settings.debug) {  Debugger.logLine('fillVillages() while_1 while_3 | swap()'); }
+						if (Settings.debug) {  Debugger.logLine('			fillVillages() while_1 while_3 | swap()'); }
 						Utilities.swap(shortages[res], pointer, pointer+1);
 						pointer++;
 					}
@@ -1187,7 +1195,7 @@ var DysponentSurowcowy = {
 				}
 
 				let counter_1 = 0;
-				Debugger.logLine("preventOverflowing() while_1");
+				Debugger.logLine("	preventOverflowing() while_1");
 				while (preventionPossible()) {
 					if(counter_1++ > 1000) { throw 'preventOverflowing(): while_1 is infinite'; }
 					let sender = null;
@@ -1206,22 +1214,22 @@ var DysponentSurowcowy = {
 					let overFlow = sender.resources.owned[res];
 					overFlow -= sender.granary * resoucesTargetLevel / 100;
 					if (overFlow <= 0) {
-						if (Settings.debug) { Debugger.logLine("preventOverflowing() while_1 | (overFlow <= 0) ==> shift()"); }
+						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (overFlow <= 0) ==> shift()"); }
 						villagesWithOverFlow[res].shift();
 						continue;
 					}
 
 					if (sender.traders.free <= Settings.tradersSafeguard) {
-						if (Settings.debug) { Debugger.logLine("preventOverflowing() while_1 | (traders.free <= tradersSafeguard) ==> shift()"); }
+						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (traders.free <= tradersSafeguard) ==> shift()"); }
 						villagesWithOverFlow[res].shift();
 						continue;
 					}
 
 					if (sender.resources.present[res] - overFlow < Settings.resourcesSafeguard[res]) {
 						overFlow = sender.resources.present[res] - Settings.resourcesSafeguard[res];
-						if (Settings.debug) { Debugger.logLine("preventOverflowing() while_1 | (present - overFlow < safeguard) ==> overFlow = present - safeguard"); }
+						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (present - overFlow < safeguard) ==> overFlow = present - safeguard"); }
 						if (overFlow <= 0) {
-							if (Settings.debug) { Debugger.logLine("preventOverflowing() while_1 | (overFlow <= 0) ==> shift()"); }
+							if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (overFlow <= 0) ==> shift()"); }
 							villagesWithOverFlow[res].shift();
 							continue;
 						}
@@ -1236,7 +1244,7 @@ var DysponentSurowcowy = {
 					}
 
 					let counter_2 = 0;
-					Debugger.logLine("preventOverflowing() while_1 while_2");
+					Debugger.logLine("		preventOverflowing() while_1 while_2");
 					while (villagesWithSpareGranary[res][0]) {
 						if(counter_2++ > 1000) { throw 'preventOverflowing(): while_2 is infinite'; }
 						let receiver = villagesWithSpareGranary[res][0];
@@ -1244,7 +1252,7 @@ var DysponentSurowcowy = {
 						spereSpace -= receiver.resources.owned[res];
 
 						if (spereSpace < 1000) {
-							if (Settings.debug) { Debugger.logLine("preventOverflowing() while_1 while_2 | (spereSpace < 1000) ==> shift()"); }
+							if (Settings.debug) { Debugger.logLine("			preventOverflowing() while_1 while_2 | (spereSpace < 1000) ==> shift()"); }
 							villagesWithSpareGranary[res].shift();
 							continue;
 						}
@@ -1256,7 +1264,8 @@ var DysponentSurowcowy = {
 
 						Script.transportsHandler.addTransport(transports, transportResources, sender, receiver);
 						createdTransport = true;
-						Debugger.logLine('preventOverflowing() while_1 while_2 | NEW TRANSPORT');
+						Debugger.logLine('			preventOverflowing() while_1 while_2 | NEW TRANSPORT');
+						if (Settings.debug) { Debugger.verifyTransports(transports); }
 
 						break;
 					}
@@ -1477,7 +1486,7 @@ var DysponentSurowcowy = {
 
 								if (reduction[0]+reduction[1]+reduction[2] == 0) { continue; }
 
-								Debugger.logLine("reduceSums() | transport swap found");
+								Debugger.logLine("	reduceSums() | transport swap found");
 								swapDone = true;
 								
 								Script.transportsHandler.reduceTransport(reduction, transports, i);
@@ -1515,7 +1524,7 @@ var DysponentSurowcowy = {
 					for (let i=0; i < transports.length-1; i++) {
 						if(counter_1++ > 1000) { throw 'merge(): for_1 is infinite'; }
 						if (if_same_route(transports[i], transports[i+1])) {
-							Debugger.logLine("merge() | merging i: " + i + ", i+1: " + (i+1));
+							Debugger.logLine("	merge() | merging i: " + i + ", i+1: " + (i+1));
 							mergeDone = true;
 							let resources = [0,0,0];
 							for (let j=0; j<3; j++) { resources[j] = transports[i].resources[j] + transports[i+1].resources[j];	}
@@ -1565,7 +1574,7 @@ var DysponentSurowcowy = {
 								}
 								if (reduction_sum == 0) { continue; }
 
-								Debugger.logLine('reduceOpposing() | reduction ('+reduction[0]+','+reduction[1]+','+reduction[2]+')');
+								Debugger.logLine('	reduceOpposing() | reduction ('+reduction[0]+','+reduction[1]+','+reduction[2]+')');
 								reductionDone = true;
 
 								if (reduction_sum < 0) { throw 'Calculated reduction sum is negative! - reduction: ('+reduction[0]+','+reduction[1]+','+reduction[2]+')'; }
@@ -1588,7 +1597,7 @@ var DysponentSurowcowy = {
 					for (let i=0; i<transports.length; i++) {
 						if(counter_1++ > 1000) { throw 'removeEmptys(): for_1 is infinite'; }
 						if (transports[i].traders == 0) {
-							Debugger.logLine("removeEmptys() | removal");
+							Debugger.logLine("	removeEmptys() | removal");
 							removalDone = true;
 							Script.villagesHandler.updateVillages(transports[i], -1);
 							Utilities.swap(transports, 0, i);
@@ -1639,7 +1648,7 @@ var DysponentSurowcowy = {
 
 									let resSum = res[0] + res[1] + res[2];
 									if (resSum > 0) {
-										Debugger.logLine("removeSuboptimalBrokers() | shortcut found!");
+										Debugger.logLine("	removeSuboptimalBrokers() | shortcut found!");
 										Script.transportsHandler.reduceTransport(res, transports, i);
 										Script.transportsHandler.reduceTransport(res, transports, j);
 
@@ -1693,7 +1702,7 @@ var DysponentSurowcowy = {
 					function comparePotentialBrokers(vA, vB) {	return maxDistRelay(vA) - maxDistRelay(vB);	}
 
 					for (let i=0; i<transports.length; i++) {
-						Debugger.logLine('relayThroughBrokers() i = ' + i);
+						Debugger.logLine('	relayThroughBrokers() i = ' + i);
 						transports.sort(Script.transportsHandler.compareTransports.cost);
 						if (transports[1] && Script.transportsHandler.transportCost(transports[0]) < Script.transportsHandler.transportCost(transports[1])) {
 							throw 'relayThroughBrokers() transports sort failed';
@@ -1719,13 +1728,11 @@ var DysponentSurowcowy = {
 								res2[k] = res[k];
 							}
 							if (traders == 0) {
-								if (Settings.debug) {
-									Debugger.logLine('relayThrougBrokers() | (traders == 0) => continue');
-								}
+								if (Settings.debug) { Debugger.logLine('		relayThrougBrokers() | (traders == 0) => continue'); }
 								continue;
 							}
 							if (traders > potBrokers[j].traders.free - Settings.tradersSafeguard) {
-								if (Settings.debug) { Debugger.logLine('relayThrougBrokers() | (traders > traders.free - Safeguard) => shift()'); }
+								if (Settings.debug) { Debugger.logLine('		relayThrougBrokers() | (traders > traders.free - Safeguard) => shift()'); }
 								Utilities.swap(potBrokers, 0, j);
 								potBrokers.shift();
 								j--;
@@ -1734,7 +1741,7 @@ var DysponentSurowcowy = {
 
 							if (res[0]+res[1]+res[2]<=0) { throw 'reduction is <= 0'; }
 
-							Debugger.logLine('relayThrougBrokers() | relay created for ' + i + ' !');
+							Debugger.logLine('		relayThrougBrokers() | relay created for ' + i + ' !');
 							
 							Script.transportsHandler.reduceTransport(res, transports, i);
 
@@ -1958,3 +1965,6 @@ var DysponentSurowcowy = {
 //			> bug fix - updateVillages no longer updates traders 3 times
 //			> bug fix - relayThroughBrokers now verifies free traders of broker
 //			> bug fix - wrong village labels in plan table GUI (usage of an iterator of a different loop)
+//		2.0.6.2 - 2.02.2021 by PabloCanaletto
+//			> bug fix - loadSetting() was operating on copies of pimitives from Settings {}
+//			> character escapes in stats panel
