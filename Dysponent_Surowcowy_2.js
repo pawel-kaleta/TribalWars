@@ -16,7 +16,7 @@ var DysponentSurowcowy = {
 	overFlowThreshold: 75,						// % pojemnosci spichlerza, powyzej ktorego zapobiegaj przelewaniu sie
 	extendedOptimization: true,					// czy optymalizacja moze generowac dodatkowych odbiorcow (wiecej klikania)
 	minSummon: 0,								// minimalne wezwanie
-	debug: false
+	debug: true
 };
 */
 
@@ -856,8 +856,8 @@ var DysponentSurowcowy = {
 					origin.resources.owned[i] -= change;
 					origin.resources.toSend[i] += change;
 
-					destination.resources.toGet[i] += change.resources;
-					destination.resources.owned[i] += change.resources;
+					destination.resources.toGet[i] += change;
+					destination.resources.owned[i] += change;
 
 					if (destination.resources.toGet[i] > 0) { destination.receiver = true; }
 
@@ -1950,3 +1950,4 @@ var DysponentSurowcowy = {
 //			> bug fix - addVillage no longer throws error, when surplus vilagge === lacking village, just loops back
 //			> added some more debug and logging
 //			> bug fix - preventOverfloving no longer leaves less then safeguard
+//			> bug fix - updateVillages no longer updates traders 3 times
