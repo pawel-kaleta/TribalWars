@@ -1720,8 +1720,8 @@ var DysponentSurowcowy = {
 							if (traders == 0) {
 								continue;
 							}
-							if (traders > potBrokers[j].free - Settings.tradersSafeguard) {
-								Utilities.swap(potBrokers, 0, poiterB);
+							if (traders >= potBrokers[j].traders.free - Settings.tradersSafeguard) {
+								Utilities.swap(potBrokers, 0, j);
 								potBrokers.shift();
 								j--;
 								continue;
@@ -1730,14 +1730,14 @@ var DysponentSurowcowy = {
 							if (res[0]+res[1]+res[2]<=0) { throw 'reduction is <= 0'; }
 
 							Debugger.logLine('relayThrougBrokers() | relay created for ' + i + ' !');
+							
+							Script.transportsHandler.reduceTransport(res, transports, i);
 
 							if(transports[i].origin === potBrokers[j]) { throw 'relayThrougBrokers(): origin === destination (1)'; }
 							Script.transportsHandler.addTransport(transports, res, transports[i].origin, potBrokers[j]);
 
 							if(potBrokers[j] === transports[i].destination) { throw 'relayThrougBrokers(): origin === destination (2)'; }
 							Script.transportsHandler.addTransport(transports, res2, potBrokers[j], transports[i].destination);
-
-							Script.transportsHandler.reduceTransport(res, transports, i);
 
 							newTransport = true;
 							i--;
@@ -1951,3 +1951,4 @@ var DysponentSurowcowy = {
 //			> added some more debug and logging
 //			> bug fix - preventOverfloving no longer leaves less then safeguard
 //			> bug fix - updateVillages no longer updates traders 3 times
+//			> bug fix - relayThroughBrokers now verifies free traders of broker
