@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.0.6.2 (beta)
+//	version:	2.1.0.0
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -9,7 +9,7 @@ javascript:
 /*
 var DysponentSurowcowy = {
 	// USTAWIENIA DOMYSLNE
-	resourcesFillTo: [20000, 25000, 25000],		// wypełniaj do tej wartości
+	resourcesFillTo: [20000, 25000, 25000],		// wypelniaj do tej wartosci
 	resourcesSafeguard: [2000, 2000, 2000],		// zabezpieczenie w surowcach, wypelniane priorytetowo
 	tradersSafeguard: 0,						// zabezpieczenie w kupcach
 	considerOngoingTransports: true,			// uwzglednij przychodzace transporty (tak - true, nie - false)
@@ -20,9 +20,15 @@ var DysponentSurowcowy = {
 };
 */
 
+//	change log:
+//		2.0.0.1-2.0.6.3 by PabloCanaletto
+//			> prerelease versions at the end
+//		2.1.0.0 by PabloCanaletto
+//			> initial release
+
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.0.6.2 (beta)';
+	const version = 'v2.1.0.0';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -1965,8 +1971,6 @@ var DysponentSurowcowy = {
 //			> bug fix - updateVillages no longer updates traders 3 times
 //			> bug fix - relayThroughBrokers now verifies free traders of broker
 //			> bug fix - wrong village labels in plan table GUI (usage of an iterator of a different loop)
-//		2.0.6.2 - 1.02.2021 by PabloCanaletto
+//		2.0.6.2 - 2.02.2021 by PabloCanaletto
 //			> bug fix - loadSetting() was operating on copies of pimitives from Settings {}
 //			> character escapes in stats panel
-//			> added some more debug and logging
-//			> debug log formatting
