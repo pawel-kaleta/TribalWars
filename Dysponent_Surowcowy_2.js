@@ -1144,7 +1144,7 @@ var DysponentSurowcowy = {
 					let counter_3 = 0;
 					Debugger.logLine('		fillVillages() while_1 while_3')
 					while (pointer < shortages[res].length-1) {
-						if(counter_3++ > 1000) { throw 'fillVillages(): while_3 is infinite'; }
+						if(counter_3++ > 2000) { throw 'fillVillages(): while_3 is infinite'; }
 						if (shortages[res][pointer].resources.owned[res] < shortages[res][pointer+1].resources.owned[res]) { 
 							if (Settings.debug) {  Debugger.logLine('			fillVillages() while_1 while_3 | end'); }
 							break;
@@ -1528,7 +1528,7 @@ var DysponentSurowcowy = {
 
 					let counter_1 = 0;
 					for (let i=0; i < transports.length-1; i++) {
-						if(counter_1++ > 1000) { throw 'merge(): for_1 is infinite'; }
+						if(counter_1++ > 500000) { throw 'merge(): for_1 is infinite'; }
 						if (if_same_route(transports[i], transports[i+1])) {
 							Debugger.logLine("	merge() | merging i: " + i + ", i+1: " + (i+1));
 							mergeDone = true;
