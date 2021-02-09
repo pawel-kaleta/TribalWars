@@ -71,12 +71,12 @@ var DysponentSurowcowy = {
 					<a href="https://forum.plemiona.pl/index.php?threads/dysponent-surowcowy.127245/">Link do w\u0105tku na forum</a><br/>
 					<br/>
 					<strong>Komunikat o b\u{142}\u{119}dzie:</strong><br/>
-					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n\n${stack}</textarea><br/>
+					<textarea rows='5' cols='100'>[spoiler=Komunikat o b\u{142}\u{119}dzie][b]${error}[/b]\n[code]\n${stack}\n[/code][/spoiler]</textarea><br/>
 					<br/>
 					Pomocny mo\u017Ce okaza\u0107 si\u0119 tak\u017Ce pe\u0142ny Debug Log z dzia\u0142ania skryptu, ale ten prawdopodobnie jest znacznie d\u0142u\u017Cszy i mo\u017Ce nie zmie\u015Bci\u0107 si\u0119 w po\u015Bcie na forum.<br/>
 					<br/>
 					<strong>Debug Log:</strong><br/>
-					<textarea rows='5' cols='100'>[spoiler=Debug Log][code]${Debugger.saveLog()}[/code]</textarea>
+					<textarea rows='5' cols='100'>[spoiler=Debug Log][code]\n${Debugger.saveLog()}\n[/code][/spoiler]</textarea>
 				</p>
 			`;
             Dialog.show(namespace, gui);
