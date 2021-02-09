@@ -1601,7 +1601,7 @@ var DysponentSurowcowy = {
 
 					let counter_1 = 0;
 					for (let i=0; i<transports.length; i++) {
-						if(counter_1++ > 1000) { throw 'removeEmptys(): for_1 is infinite'; }
+						if(counter_1++ > 500000) { throw 'removeEmptys(): for_1 is infinite'; }
 						if (transports[i].traders == 0) {
 							Debugger.logLine("	removeEmptys() | removal");
 							removalDone = true;
