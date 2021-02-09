@@ -1794,7 +1794,7 @@ var DysponentSurowcowy = {
 
 				function reload() {
 					Debugger.logLine('reload()');
-					let url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination;
+					let url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination + Settings.sitter;
 					if (Script.plan.group) { url += '&group=' + Script.plan.group; }
 					location = url;
 				}
