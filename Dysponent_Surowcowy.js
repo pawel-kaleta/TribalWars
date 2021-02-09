@@ -1057,7 +1057,7 @@ var DysponentSurowcowy = {
 				let counter_1 = 0
 				Debugger.logLine('	fillVillages() while_1');
 				while (	anyShortage() && surpluses.length > 0 ) {
-					if(counter_1++ > 1000) { throw 'fillVillages(): '; }
+					if(counter_1++ > 100000) { throw 'fillVillages(): '; }
 					let receiver = null;
 					let res = null;
 					
@@ -1094,7 +1094,7 @@ var DysponentSurowcowy = {
 					let counter_2 = 0;
 					Debugger.logLine('		fillVillages() while_1 while_2');
 					while (surpluses[0] && surpluses[0] !== firstLooper) {
-						if(counter_2++ > 1000) { throw 'fillVillages(): while_2 is infinite'; }
+						if(counter_2++ > 2000) { throw 'fillVillages(): while_2 is infinite'; }
 
 						let spare = surpluses[0].resources.owned[res] - resoucesTargetLevel[res];
 						if (spare < 1000)
@@ -1203,7 +1203,7 @@ var DysponentSurowcowy = {
 				let counter_1 = 0;
 				Debugger.logLine("	preventOverflowing() while_1");
 				while (preventionPossible()) {
-					if(counter_1++ > 1000) { throw 'preventOverflowing(): while_1 is infinite'; }
+					if(counter_1++ > 100000) { throw 'preventOverflowing(): while_1 is infinite'; }
 					let sender = null;
 					let res = null;
 
@@ -1252,7 +1252,7 @@ var DysponentSurowcowy = {
 					let counter_2 = 0;
 					Debugger.logLine("		preventOverflowing() while_1 while_2");
 					while (villagesWithSpareGranary[res][0]) {
-						if(counter_2++ > 1000) { throw 'preventOverflowing(): while_2 is infinite'; }
+						if(counter_2++ > 2000) { throw 'preventOverflowing(): while_2 is infinite'; }
 						let receiver = villagesWithSpareGranary[res][0];
 						let spereSpace = receiver.granary * resoucesTargetLevel / 100;
 						spereSpace -= receiver.resources.owned[res];
@@ -1646,7 +1646,7 @@ var DysponentSurowcowy = {
 
 					for	(let i=0; i<transports.length; i++) {
 						for (let j=0; j<transports.length; j++) {
-							if (transports[i].destination == transports[j].origin) {
+							if (transports[i].destination === transports[j].origin) {
 								let potShortcutDist = Utilities.distance(transports[i].origin.coords, transports[j].destination.coords);
 								if (2 * potShortcutDist < transports[i].distance + transports[j].distance) {
 									let res = [0,0,0];
@@ -1658,7 +1658,7 @@ var DysponentSurowcowy = {
 										Script.transportsHandler.reduceTransport(res, transports, i);
 										Script.transportsHandler.reduceTransport(res, transports, j);
 
-										if(transports[i].origin == transports[j].destination) { throw 'removeSuboptimalBrokers(): origin === destination'; }
+										if(transports[i].origin === transports[j].destination) { throw 'removeSuboptimalBrokers(): origin === destination'; }
 										
 										Script.transportsHandler.addTransport(transports, res, transports[i].origin, transports[j].destination);
 
