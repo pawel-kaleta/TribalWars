@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.1.0.0
+//	version:	2.1.0.1
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -23,12 +23,14 @@ var DysponentSurowcowy = {
 //	change log:
 //		2.0.0.1-2.0.6.3 by PabloCanaletto
 //			> prerelease versions at the end
-//		2.1.0.0 by PabloCanaletto
+//		2.1.0.0 - 15.02.2021 by PabloCanaletto
 //			> initial release
+//		2.1.0.1 - 15.02.2021 by PabloCanaletto
+//			> bug fix - sitter handling in planExecutor
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.1.0.0';
+	const version = 'v2.1.0.1';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
@@ -1794,7 +1796,7 @@ var DysponentSurowcowy = {
 
 				function reload() {
 					Debugger.logLine('reload()');
-					let url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination;
+					let url = '/game.php?screen=market&mode=call&village=' + Script.plan.summons[0].destination + Settings.sitter;
 					if (Script.plan.group) { url += '&group=' + Script.plan.group; }
 					location = url;
 				}
