@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.1.0.0
+//	version:	2.1.0.1
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -30,7 +30,7 @@ var DysponentSurowcowy = {
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.1.0.0';
+	const version = 'v2.1.0.1';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
