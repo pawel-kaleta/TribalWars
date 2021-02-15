@@ -25,6 +25,8 @@ var DysponentSurowcowy = {
 //			> prerelease versions at the end
 //		2.1.0.0 by PabloCanaletto
 //			> initial release
+//		2.1.0.1 by PabloCanaletto
+//			> bug fix - sitter handling in planExecutor
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
