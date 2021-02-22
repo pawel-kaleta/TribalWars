@@ -80,7 +80,6 @@
 
 					for (let j=0; j<this.settings.unit_types_number; j++) {
 						units.push(row.cells[j+2]);
-						console.log(row.cells[j+2]);
 						receiver.supports_sum[j] += Number(units[j].innerText);
 					}
 					console.log('');
