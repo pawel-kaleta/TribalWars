@@ -96,7 +96,7 @@
 			}
 		},
 		create_table: function () {
-			$('#units_table tbody th')[0].innerText = $('#units_table tbody th')[0].innerText.split(' ')[0];
+			$('#units_table thead th')[2].innerText = $('#units_table thead th')[2].innerText.split(' ')[0];
 
 			var senders = this.data.senders;
 			var receivers = this.data.receivers;
