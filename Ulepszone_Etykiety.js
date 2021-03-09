@@ -49,7 +49,7 @@ function normalize_num(num) { return num < 10 ? "0" + num : num }
  
 function dist_strait_point(p, prosta, mian) { return Math.abs(prosta.A*p.x + prosta.B*p.y + prosta.C) / mian; }
 
-function detectionDist(r,a,b,c) { //bardzo skomplikowana geometria analityczna
+function detectionDist(r,a,b,c) { //geometria analityczna
 	//r = promien wiezy
 	//a = odleglosc atakowana - wieza
 	//b = odleglosc atakujaca - wieza
@@ -237,14 +237,14 @@ function init() {
 					let mian = Math.sqrt(prosta.A*prosta.A + prosta.B*prosta.B);
 					
 					maxDist = 0;
-					for(let i=0; i<WT_tab.length; i++){ //sprawdzamy wszystkie wieĂ…ÂĽe
+					for(let i=0; i<WT_tab.length; i++){ //sprawdzamy wszystkie wieże
 						if(dist_strait_point(WT_tab[i],prosta,mian) < WT_tab[i].range) { // przez zasieg ktorych przechodzi atak (odleglosc od prostej ataku do wiezy < zasieg wiezy)
 							let a = distance(coords.atakowana, WT_tab[i]);
 							let b = distance(coords.atakujaca, WT_tab[i]);
 							let c = AttDistance;
 							
 							let dist = detectionDist(WT_tab[i].range,a,b,c);
-							dist > maxDist && ( maxDist = dist ); //wybieramy najwczeĂ…â€şniejszy moment detekcji
+							dist > maxDist && ( maxDist = dist) //wybieramy najwczesniejszy moment detekcji
 						}
 					}
 					
