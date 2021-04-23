@@ -1,5 +1,8 @@
 javascript:
 
+// OBSOLETE!!!
+// PRZESTARZAŁY!!!
+
 //	author:		PabloCanaletto
 //	version:	1.0
 //	history of changes:
