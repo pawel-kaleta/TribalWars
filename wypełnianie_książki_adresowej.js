@@ -4,7 +4,7 @@ javascript:
 //	version:		1.0.0
 //	description:	Dodaje graczy do książki adresowej, uruchamiamy w Książce Adresowej. Musisz mieć co najmniej 1 gracza ju dodanego ręcznie. | Add players to Adress Book, lauch in Adress Book. Requires 1 manually added allready.
 
-var mailing_list = 'gracz a;gracz b; kolejny gracz; i tak dalej';
+var mailing_list = 'gracz a;gracz b;kolejny gracz;i tak dalej';
 
 // NIE TYKAĆ CO PONIŻEJ | DO NOT EDIT BELOW
 mailing_list = mailing_list.split(';');
