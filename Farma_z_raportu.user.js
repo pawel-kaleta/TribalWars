@@ -44,7 +44,7 @@
 
         if( spy_resources_text != "nie ma") {
             spy_resources = spy_resources_text.split(' ').map(x => Number(x.replace('.','')));
-            for(var i=0; i<spy_resources.length; i++) {
+            for(let i=0; i<spy_resources.length; i++) {
                 resources[i] += spy_resources[i];
             }
         }
@@ -73,17 +73,18 @@
         }
 
         var buildings = JSON.parse(document.getElementById("attack_spy_building_data").value);
-        for (var i=0; i<buildings.length; i++) {
+        for (let i=0; i<buildings.length; i++) {
             if (buildings[i].id == "wood")	{resources[0] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
             if (buildings[i].id == "stone")	{resources[1] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
             if (buildings[i].id == "iron")	{resources[2] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
         }
-        for (var i=0; i<buildings.lenght; i++) {
+        console.log(buildings);
+        for (let i=0; i<buildings.length; i++) {
             if (buildings[i].id == "storage" ) {
                 var max_sur = storage(buildings[i].level);
-                if (max_sur < resources[0]) { resources[0] = max_sur; }
-                if (max_sur < resources[1]) { resources[1] = max_sur; }
-                if (max_sur < resources[2]) { resources[2] = max_sur; }
+                if (max_sur < resources[0]) { resources[0] = max_sur; console.log("a"); }
+                if (max_sur < resources[1]) { resources[1] = max_sur; console.log("b"); }
+                if (max_sur < resources[2]) { resources[2] = max_sur; console.log("c"); }
 
                 break;
             }
