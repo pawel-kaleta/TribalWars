@@ -78,13 +78,12 @@
             if (buildings[i].id == "stone")	{resources[1] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
             if (buildings[i].id == "iron")	{resources[2] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
         }
-        console.log(buildings);
         for (let i=0; i<buildings.length; i++) {
             if (buildings[i].id == "storage" ) {
                 var max_sur = storage(buildings[i].level);
-                if (max_sur < resources[0]) { resources[0] = max_sur; console.log("a"); }
-                if (max_sur < resources[1]) { resources[1] = max_sur; console.log("b"); }
-                if (max_sur < resources[2]) { resources[2] = max_sur; console.log("c"); }
+                if (max_sur < resources[0]) { resources[0] = max_sur; }
+                if (max_sur < resources[1]) { resources[1] = max_sur; }
+                if (max_sur < resources[2]) { resources[2] = max_sur; }
 
                 break;
             }
