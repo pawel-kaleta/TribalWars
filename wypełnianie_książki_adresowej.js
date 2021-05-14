@@ -15,10 +15,12 @@ var h=$("#content_value > table > tbody > tr > td:nth-child(2) > form:nth-child(
 function add_player() {
 	if (i>=mailing_list.length) { 
 		console.log('finito');
+		UI.SuccessMessage('To już wszyscy!);
 		return;
 	}
 	
 	console.log(mailing_list[i]);
+	UI.SuccessMessage('Dodany gracz: ' + mailing_list[i]);
 	
 	let form_data = {};
 	form_data['name'] = mailing_list[i];
