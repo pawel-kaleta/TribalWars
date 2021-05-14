@@ -15,7 +15,7 @@ var h=$("#content_value > table > tbody > tr > td:nth-child(2) > form:nth-child(
 function add_player() {
 	if (i>=mailing_list.length) { 
 		console.log('finito');
-		UI.SuccessMessage('To już wszyscy!);
+		UI.SuccessMessage('To już wszyscy!');
 		return;
 	}
 	
