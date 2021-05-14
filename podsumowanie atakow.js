@@ -7,7 +7,6 @@ javascript:
 //					I would only appreciate you to leave notification about my orginal authorship untouched
 //					with the whole history of changes.
 
-(async function (TribalWars) {
 
 var rows_2;
 var table;
@@ -55,16 +54,11 @@ function load_new_data() {
 			player_nick = players[i].text;
 			player_id = players[i].value;
 			load_player_data(player_id, player_nick);
-			//console.log(rows_2);
 			i++;
 			if (i == players.length) {
 				clearInterval(interval_id);
 				var attacks_data = JSON.stringify(rows_2);
 				localStorage.setItem("attacks_data", attacks_data);
-				//console.log(rows_2);
-				//console.log(new Date(rows_2[2].refresh_time).getHours());
-				//console.log(new Date(rows_2[2].refresh_time).getMinutes());
-				//console.log(new Date(rows_2[2].refresh_time).getSeconds());
 			}
 			doing_ajax = false;
 		}
@@ -113,7 +107,6 @@ function load_player_data(player_id, player_nick) {
 		
 		var refresh_time = Date.now();
 		rows_2.push(new row(player_nick, player_id, att, refresh_time));
-		//console.log(rows_2);
 	});
 }
 
