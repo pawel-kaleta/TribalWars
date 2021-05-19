@@ -1,21 +1,19 @@
-//	author:		PabloCanaletto
-//	version:	1.0
-//	history of changes:
-//		1.0 - 2.08.2020 by PabloCanaletto
-//			Initial Release
-//					
-//	disclaimer:	You are free to use this script in any way you like and to submit changes.
-//				I would only appreciate you to leave this notification about my orginal authorship untouched
-//				with the whole history of changes.
+// ==UserScript==
+// @name         Usprawnienie przegladu raportow z ataku
+// @version      1.0
+// @description  This script improves attack reports overview
+// @author       PabloCanaletto
+// @match        https://*.plemiona.pl/game.php?*screen=report*mode=attack*
+// ==/UserScript==
 
-// FUNCTIONALITY
-// This script improves attack reports overview.
+(function(TribalWars) {
+    'use strict';
 
-/*
-const automatic_reformat = true; // ZMIEN NA false JESLI NIE CHCESZ FORMATOWANIA
-*/
+    if(document.URL.indexOf('view=') != -1) {
+        return;
+    }
+	const reformat = true; //  ZMIEN NA false JESLI NIE CHCESZ FORMATOWANIA
 
-async function RepotsOverview() {
 	const namespace = 'Usprawnienie przegl\u0105du raport\xF3w';
 	const ERROR_MESSAGE = 'Komunikat o b\u{142}\u{119}dzie:';
 	const Helper = {
@@ -109,16 +107,12 @@ async function RepotsOverview() {
 					var coords = Script.coordsFromReport(report_text);
 
 					if(coords == null) {
-						console.log('a');
-						console.log(report_text);
 						UI.ErrorMessage('Nie rozpoznano zatakowanej wioski w raporcie: "' + report_text + '". Nie ukrywam raportu.', 5000);
 						continue;
 					}
 
 					var village_index = Script.filter.bin_search(world.village, coords, Script.filter.coords_from_array);
 					if (village_index == null) {
-						console.log('a');
-						console.log(report_text);
 						UI.ErrorMessage('Nie rozpoznano zatakowanej wioski w raporcie: "' + report_text + '". Nie ukrywam raportu.', 5000);
 						continue;
 					}
@@ -274,40 +268,31 @@ async function RepotsOverview() {
 				}
 			},
 			reformatLeftIcons: function (rows, i) {
-				if($(rows[i]).find('img').length == 0) {
-					$(rows[i].children[1].children[1]).css({
-						float: 'right',
-						'margin-right': 121 + 'px',
-						'margin-top': 2 + 'px'
-					});
-				} else {
-					$(rows[i].children[1].children[1]).css({
+				$(rows[i].children[1].children[1]).css({
+					float: 'right',
+					'margin-right': 5 + 'px',
+					'margin-top': 3 + 'px'
+				});
+
+				if (rows[i].children[1].children[2].nodeName == "IMG") {
+					$(rows[i].children[1].children[2]).css({
 						float: 'right',
 						'margin-right': 5 + 'px',
-						'margin-top': 3 + 'px'
+						'margin-top': 2 + 'px'
 					});
-
-					if (rows[i].children[1].children[2].nodeName == "IMG") {
-						$(rows[i].children[1].children[2]).css({
-							float: 'right',
-							'margin-right': 5 + 'px',
-							'margin-top': 2 + 'px'
-						});
-						$(rows[i].children[1].children[3]).css({
-							float: 'right',
-							'margin-right': 19 + 'px',
-							'margin-top': 2 + 'px'
-						});
-					}
-					else {
-						$(rows[i].children[1].children[2]).css({
-							float: 'right',
-							'margin-right': 36 + 'px',
-							'margin-top': 2 + 'px'
-						});
-					}
+					$(rows[i].children[1].children[3]).css({
+						float: 'right',
+						'margin-right': 19 + 'px',
+						'margin-top': 2 + 'px'
+					});
 				}
-				
+				else {
+					$(rows[i].children[1].children[2]).css({
+						float: 'right',
+						'margin-right': 36 + 'px',
+						'margin-top': 2 + 'px'
+					});
+				}
 			},
 			reformatter_init: async function () {
 				if(!Script.reformatter.done) {
@@ -317,6 +302,8 @@ async function RepotsOverview() {
 						Script.reformatter.reformatRightIcons(rows, i);
 						Script.reformatter.reformatLeftIcons(rows, i);
 					}
+
+                    Script.sorter.differentiateVillages(rows);
 				}
 			}
 		},
@@ -339,7 +326,7 @@ async function RepotsOverview() {
 				Script.sorter.sorter_init().catch(Helper.handle_error);
 			});
 
-			if(!automatic_reformat) {
+			if(!reformat) {
 				$('.report_filter [value="Zresetuj wszystkie filtry"]').closest('tr').before(Script.gui_content.reformat_btn);
 				$('#reformat_script_button').on('click', async function() {
 					Script.reformatter.reformatter_init().catch(Helper.handle_error);
@@ -352,10 +339,4 @@ async function RepotsOverview() {
 		}
 	};
 	try { Script.main(); } catch (ex) { Helper.handle_error(ex); }
-}
-
-if (document.URL.indexOf("screen=report") != -1 && document.URL.indexOf("mode=attack") != -1) {
-	RepotsOverview();
-} else {
-	UI.ErrorMessage("Skrypt do u\u017Cycia w Raporty > Atak");
-}
+})(TribalWars);
