@@ -20,6 +20,11 @@
         return 813.35 * Math.pow(Math.E, 0.2066*level);
     }
 
+    function hiding(level) {
+        return 112.51 * Math.pow(Math.E, 0.2878*level);
+
+    }
+
     function main() {
         var wc;
         $.ajax({
@@ -71,23 +76,24 @@
         if (document.getElementById("attack_spy_building_data") === null) {
             return;
         }
-
         var buildings = JSON.parse(document.getElementById("attack_spy_building_data").value);
         for (let i=0; i<buildings.length; i++) {
             if (buildings[i].id == "wood")	{resources[0] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
             if (buildings[i].id == "stone")	{resources[1] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
             if (buildings[i].id == "iron")	{resources[2] += time * income(Number(buildings[i].level)) * pr_sw; continue;}
         }
+        var max_sur=0;
         for (let i=0; i<buildings.length; i++) {
             if (buildings[i].id == "storage" ) {
-                var max_sur = storage(buildings[i].level);
-                if (max_sur < resources[0]) { resources[0] = max_sur; }
-                if (max_sur < resources[1]) { resources[1] = max_sur; }
-                if (max_sur < resources[2]) { resources[2] = max_sur; }
-
-                break;
+                max_sur += storage(buildings[i].level);
+            }
+            if (buildings[i].id == "hide" ) {
+                max_sur -= hiding(buildings[i].level);
             }
         }
+        if (max_sur < resources[0]) { resources[0] = max_sur; }
+        if (max_sur < resources[1]) { resources[1] = max_sur; }
+        if (max_sur < resources[2]) { resources[2] = max_sur; }
         var resources_sum = resources[0] + resources[1] + resources[2];
 
         var lk_num = Math.floor(resources_sum/80);
