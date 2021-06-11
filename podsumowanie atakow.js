@@ -53,8 +53,6 @@ function load_new_data() {
 			
 			player_nick = players[i].text;
 			player_id = players[i].value;
-			console.log(player_nick);
-			console.log(player_id);
 			load_player_data(player_id, player_nick);
 			i++;
 			if (i == players.length) {
@@ -77,7 +75,7 @@ function load_player_data(player_id, player_nick) {
 		var attacks;
 		
 		if (have_rights) {
-			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > tr:nth-child(1) > th:nth-child(15) > strong');
+			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > tr:nth-child(1) > th:last-child > strong');
 		} else {
 			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > :nth-child(1) > :nth-child(2) > strong');
 		}
