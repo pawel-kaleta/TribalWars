@@ -1,7 +1,7 @@
 javascript:
 
 //	author:			PabloCanaletto
-//	version:		0.7.0
+//	version:		0.8.0
 //	description:	This script shows attacks on yours tribemates.
 //	disclaimer:		You are free to use this script in any way you like and to submit changes.
 //					I would only appreciate you to leave notification about my orginal authorship untouched
@@ -53,16 +53,17 @@ function load_new_data() {
 			
 			player_nick = players[i].text;
 			player_id = players[i].value;
+			console.log(player_nick);
+			console.log(player_id);
 			load_player_data(player_id, player_nick);
 			i++;
 			if (i == players.length) {
 				clearInterval(interval_id);
 				var attacks_data = JSON.stringify(rows_2);
-				localStorage.setItem("attacks_data", attacks_data);
 			}
 			doing_ajax = false;
 		}
-	}, 250);
+	}, 300);
 }
 
 function load_player_data(player_id, player_nick) {
@@ -76,7 +77,7 @@ function load_player_data(player_id, player_nick) {
 		var attacks;
 		
 		if (have_rights) {
-			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > tr:nth-child(1) > th:nth-child(16) > strong');
+			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > tr:nth-child(1) > th:nth-child(15) > strong');
 		} else {
 			attacks = requestedBody.querySelector('#ally_content > div > div > table > tbody > :nth-child(1) > :nth-child(2) > strong');
 		}
@@ -141,3 +142,5 @@ function row(_nick, _id, _attacks, _refresh_time) {
 //			> jQuerry deprecated functions removal
 //		0.7.0 - 12.01.2021 by PabloCanaletto
 //			> sitter handling
+//		0.8.0 - 11.06.2021 by PabloCanaletto
+//			> adaptation to changes in game
