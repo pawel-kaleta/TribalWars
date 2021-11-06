@@ -513,6 +513,38 @@ var FarmOptimizer_DefaultTemplates = {
 			}
 		},
 		data_loader: {
+			progress_bar: {
+				size: 0,
+				progress: 0,
+				message: '',
+				symbol_1: '\u2B22',
+				symbol_2: '\u2B21',
+				init: function (new_size, new_message) {
+					this.size = new_size;
+					this.progress = 0;
+					this.message = new_message;
+					var bar = '';
+					for (let i=1; i<=25; i++) {
+						bar += this.symbol_2;
+					}
+					UI.InfoMessage(this.message + ' ' + bar, 5000);
+				},
+				update: function (stage = this.progress + 1) {
+					this.progress = stage;
+
+					let progress = this.progress / this.size;
+					progress = Math.floor(progress * 25);
+					let bar = '';
+					for (let i=1; i<=25; i++) {
+						if (i<=progress) {
+							bar += this.symbol_1;
+							continue;
+						}
+						bar += this.symbol_2;;
+					}
+					UI.InfoMessage(this.message + ' ' + bar, 5000);
+				}
+			},
 			farm_assistant_options: {
 				reset_in_game_filters : async function () {
 					var checkbox;
@@ -522,30 +554,35 @@ var FarmOptimizer_DefaultTemplates = {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 
 					checkbox = $('#attacked_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 
 					checkbox = $('#full_losses_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 
 					checkbox = $('#partial_losses_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 
 					checkbox = $('#full_hauls_checkbox')[0];
 					if (checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 				},
 				set_page_size: async function () {
 					if ($('#farm_pagesize')[0].value < 100) {
@@ -561,6 +598,7 @@ var FarmOptimizer_DefaultTemplates = {
 						);
 						await script.utilitys.sleep();
 					}
+					script.data_loader.progress_bar.update();
 				},
 				set_sorting_order: async function () {
 					$.ajax({
@@ -569,6 +607,7 @@ var FarmOptimizer_DefaultTemplates = {
 						type: 'GET'
 					});
 					await script.utilitys.sleep();
+					script.data_loader.progress_bar.update();
 				},
 				prepare: async function () {
 					await this.reset_in_game_filters();
@@ -584,6 +623,7 @@ var FarmOptimizer_DefaultTemplates = {
 							await script.utilitys.sleep();
 						}
 					}
+					script.data_loader.progress_bar.update();
 				}
 			},
 			script_data: {
@@ -596,6 +636,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 
 					script_data = saved_script_data;
+					script.data_loader.progress_bar.update();
 				},
 				init: function () {
 					for (let i = 0; i < FarmOptimizer_DefaultTemplates.farming.length; i++) {
@@ -652,6 +693,7 @@ var FarmOptimizer_DefaultTemplates = {
 					});
 					await script.utilitys.sleep();
 				}
+				script.data_loader.progress_bar.update();
 			},
 			load_game_data: async function () {
 				let units_speed = 0;
@@ -670,6 +712,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				});
 				script.utilitys.sleep();
+				script.data_loader.progress_bar.update();
 				
 				$.ajax({
 					async: false,
@@ -690,6 +733,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				});
 				script.utilitys.sleep();
+				script.data_loader.progress_bar.update();
 
 				let table = $('#group_popup_content_container > #group_table')[0];
 
@@ -701,6 +745,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 					table = $('#group_popup_content_container > #group_table')[0];
 				}
+				script.data_loader.progress_bar.update();
 
 				if (typeof table == 'undefined') {
 					throw LOCALE.ERRORS.DATA_LOADER.VILLAGE_GROUP;
@@ -712,7 +757,6 @@ var FarmOptimizer_DefaultTemplates = {
 						continue;
 					base_data.villages_group.push(script.utilitys.coordsFromName(village));
 				}
-
 			},
 			load_attacks: async function () {
 				var rows;
@@ -730,6 +774,8 @@ var FarmOptimizer_DefaultTemplates = {
 						}
 					}
 				});
+				script.utilitys.sleep();
+				script.data_loader.progress_bar.update();
 
 				for (let i=0; i<rows.length; i++) {
 					var att_name = rows[i].cells[0].innerText;
@@ -755,7 +801,6 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				}
 
-				console.log(attacks);
 			},
 			init: async function () {
 				await this.farm_assistant_options.prepare();
@@ -776,6 +821,9 @@ var FarmOptimizer_DefaultTemplates = {
 			hiding: function(lvl) {
 				if (lvl == 0) { return 0; }
 				return 112.51 * Math.pow(Math.E, 0.2878*lvl);
+			},
+			prepare_template: function (plunder, icon, slot_ab) {
+
 			}
 		},
 		handle_rows: function () {
@@ -891,6 +939,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 				script.gui.plunder_list.format_row(plunder);
 			}
+
 		},
 		panels: {
 			farm: {
@@ -1952,6 +2001,23 @@ var FarmOptimizer_DefaultTemplates = {
 						td.innerHTML = '? ? ?';
 					}
 				},
+				format_cell_dist: function (td) {
+					if (td.innerText.indexOf('.') == -1) {
+						td.innerText = td.innerText + '.0';
+					}
+					td.align = 'right';
+					td.style.paddingRight = '10px';
+				},
+				format_cell_attacks: function (cell, img) {
+					cell.align = 'center';
+					if (typeof img != 'undefined') {
+						var text = img.tooltiptext;
+						if (typeof text == 'undefined')
+							text = img.title;
+						cell.innerText = text.split(" ")[0];
+						img.remove();
+					}
+				},
 				format_cell_warning: function (td, plunder) {
 					td.align = 'center';
 					if (plunder.village.buildings.wall > 0) {
@@ -1969,6 +2035,18 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 					if (plunder.filters_1[4] || plunder.filters_1[5]) {
 						td.innerHTML = `<img src="${ICONS.ERROR}"></img>`;
+					}
+				},
+				format_cell_optimize: function (td, plunder, slot_ab) {
+					td.align = 'center';
+
+					if (plunder.village.timeStamp_build != -1) {
+						td.innerHTML = `<a href="#"><img src="${ICONS.OPTIMIZER}"></img></a>`;
+						let a = $(td).find('a')[0];
+						a.onclick = function (event) {
+							event.preventDefault();
+							script.optimizer.prepare_template(plunder, this, slot_ab);
+						}
 					}
 				},
 				format_cell_wallbreaker: function (td, plunder, href) {
@@ -1994,23 +2072,6 @@ var FarmOptimizer_DefaultTemplates = {
 								CommandPopup.openRallyPoint(dane);
 							}
 						}
-					}
-				},
-				format_cell_dist: function (td) {
-					if (td.innerText.indexOf('.') == -1) {
-						td.innerText = td.innerText + '.0';
-					}
-					td.align = 'right';
-					td.style.paddingRight = '10px';
-				},
-				format_cell_attacks: function (cell, img) {
-					cell.align = 'center';
-					if (typeof img != 'undefined') {
-						var text = img.tooltiptext;
-						if (typeof text == 'undefined')
-							text = img.title;
-						cell.innerText = text.split(" ")[0];
-						img.remove();
 					}
 				},
 				format_row: function (plunder) {
@@ -2056,10 +2117,9 @@ var FarmOptimizer_DefaultTemplates = {
 					this.format_cell_dist(dist);
 					this.format_cell_attacks(attacks, $(village).find('img')[0]);
 					this.format_cell_warning(warning, plunder);
+					this.format_cell_optimize(A_optimize, plunder, 'a');
+					this.format_cell_optimize(B_optimize, plunder, 'b');
 					this.format_cell_wallbreaker(wallbreaker, plunder, $(place).find('a')[0].href);
-
-					A_optimize.align = 'center';
-					B_optimize.align = 'center';
 
 					if (wall.innerHTML == '?' && plunder.village.buildings.wall != -1) {
 						wall.innerHTML = `${plunder.village.buildings.wall}`;
@@ -2208,7 +2268,7 @@ var FarmOptimizer_DefaultTemplates = {
 				return;
 			}
 
-			UI.InfoMessage(LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING, 10000);
+			script.data_loader.progress_bar.init(14, LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING);
 			await script.data_loader.init();
 			script.gui.create();
 			script.report_previewer.init();
