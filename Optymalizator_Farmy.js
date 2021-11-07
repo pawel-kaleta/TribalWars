@@ -41,17 +41,17 @@ var FarmOptimizer_DefaultTemplates = {
 				TIP_1: 'Aby uzyska\u0107 pomoc zajrzyj do w\u0105tku dotycz\u0105cego tego skryptu na Forum og\xF3lnym. Je\u015Bli nie znajdziesz tam \u017Cadnych informacji mo\u017Cesz napisa\u0107 zg\u0142oszenie.',
 				TIP_2: 'Za\u0142\u0105cz poni\u017Cszy Komunikat o B\u0142\u0119dzie.',
 				STACK: 'Komunikat o b\u{142}\u{119}dzie',
-				REPORT_PREVIEWER: {
-					ERROR_1: 'Nie udało się pobrać raportu: ',
-					ERROR_2: 'Raport skasowany. Odświerz stronę, aby podejrzeć nowy.',
-					ERROR_3: 'Nie udało się odczytać pobranego raportu.'
-				},
 				TEMPLATES: {
 					ERROR_1: 'Nie rozpoznano szablonu przy próbie aktywacji!',
 					ERROR_2: 'Nie udało się aktywować szablonu, status żądania: ',
 					ERROR_3: 'Nie uzyskano dostępu do szablonu w grze.'
 				},
 				DATA_LOADER: {
+					REPORTS: {
+						ERROR_1: 'Nie udało się pobrać raportu: ',
+						ERROR_2: 'Raport skasowany. Odświerz stronę, aby podejrzeć nowy.',
+						ERROR_3: 'Nie udało się odczytać pobranego raportu.'
+					},
 					VILLAGE_GROUP: 'Nie udało się wczytać listy wiosek w aktywnej grupie.',
 					PLUNDER_LIST_PAGE: 'Nie udało się pobrać strony z plądrowaniami, status żądania: ',
 					INTERFACE_WORLD: 'Nie udało się pobrać z /interface.php ustawień świata, status żądania: ',
@@ -108,9 +108,12 @@ var FarmOptimizer_DefaultTemplates = {
 			SETTINGS: 'Ustawienia',
 			NAME: 'Nazwa',
 			SPEED: 'Prędkość',
-			DELETED_RAPORT_IN_GAME_ERROR_MESSAGE: 'Nie masz upowa\u017cnienia',
+			DELETED_REPORT_IN_GAME_ERROR_MESSAGE: 'Nie masz upowa\u017cnienia',
 			BARB_ATTACK: 'Atak na Wioska barbarzyńska',
-			NOMAD_ATTACK: 'Atak na Osada koczowników'
+			NOMAD_ATTACK: 'Atak na Osada koczowników',
+			TOTAL_DEFEAT: 'Żaden żołnierz nie wrócił żywy. Nie można ustalić żadnych informacji o wielkości wojsk przeciwnika.',
+			REPORT: 'Raport',
+			NONE: 'nie ma'
 		}
 	};
 	var LOCALE = i18e.pl_PL;
@@ -192,14 +195,15 @@ var FarmOptimizer_DefaultTemplates = {
 		 *		coords: { x: 0, y: 0},
 		 *		timeStamp_build: 0,
 		 *		timeStamp_res: 0,
+		 *		report_id: 0,
 		 *		resources: [0,0,0],
 		 *		units: false,
 		 *		buildings: {
 		 *			eco: [0,0,0],
 		 *			eco_sum: 0,
 		 *			wall: 0,
-		 *			warehouse: 0,
-		 *			hidingPlace: 0
+		 *			storage: 0,
+		 *			hiding: 0
 		 *		}
 		 *	}
 		 */
@@ -209,8 +213,7 @@ var FarmOptimizer_DefaultTemplates = {
 	 *	{
 	 *		row: {},
 	 *		village: {},
-	 *		filters_1: [false, false, false, false, false, false],  // true/false
-	 *		filters_2: [-1, -1, -1, -1, -1],  // -1/true/false
+	 *		filters_1: [false, false, false, false, false, false],
 	 *		dist: 0
 	 *	}
 	 */
@@ -304,13 +307,15 @@ var FarmOptimizer_DefaultTemplates = {
 			parse_date: function (date_string) {
 				let time_offset = 0;
 
-				const date_matches = date_string.match(new RegExp('/' + LOCALE.DATES.TOMORROW + '|' + LOCALE.DATES.TODAY + '|' + LOCALE.DATES.YESTERDAY + '|\d+\.\d+(?:\.\d+)?/g'));
+				const date_matches = date_string.match(new RegExp(LOCALE.DATES.TOMORROW + '|' + LOCALE.DATES.TODAY + '|' + LOCALE.DATES.YESTERDAY + '|\\d+\\.\\d+(?:\\.\\d+)?', 'g'));
+				
 				if (date_matches) {
 					time_offset = date_string.indexOf(date_matches[0]) + date_matches[0].length;
 				}
 
 				const time_matches = date_string.slice(time_offset).match(/\d+(?::\d+)*/g);
 				if (!time_matches || time_matches.length > 1 || (date_matches && date_matches.length > 1)) {
+					console.log(time_matches);
 					throw LOCALE.ERRORS.DATE_RECOGNITION + ': "' + date_string + '"';
 				}
 
@@ -357,7 +362,39 @@ var FarmOptimizer_DefaultTemplates = {
 				return user_date;
 			},
 		},
-		report_previewer: {
+		progress_bar: {
+			size: 0,
+			progress: 0,
+			message: '',
+			symbol_1: '\u2B22',
+			symbol_2: '\u2B21',
+			init: function (new_size, new_message) {
+				this.size = new_size;
+				this.progress = 0;
+				this.message = new_message;
+				var bar = '';
+				for (let i=1; i<=25; i++) {
+					bar += this.symbol_2;
+				}
+				UI.InfoMessage(this.message + ' ' + bar, 5000);
+			},
+			update: function (stage = this.progress + 1) {
+				this.progress = stage;
+
+				let progress = this.progress / this.size;
+				progress = Math.round(progress * 25);
+				let bar = '';
+				for (let i=1; i<=25; i++) {
+					if (i<=progress) {
+						bar += this.symbol_1;
+						continue;
+					}
+					bar += this.symbol_2;;
+				}
+				UI.InfoMessage(this.message + ' ' + bar, 5000);
+			}
+		},
+		reports_previewer: {
 			PREVIEW_DESIRED_SIZE: 518,
 			PREVIEW_MIN_SCALE: .70,
 			previewing: !1,
@@ -390,10 +427,10 @@ var FarmOptimizer_DefaultTemplates = {
 				link.addEventListener('mouseenter', function () {
 					try {
 						var e = this;
-						script.report_previewer.hover = true;
-						script.report_previewer.previewing = e.getAttribute('data_id');
+						script.reports_previewer.hover = true;
+						script.reports_previewer.previewing = e.getAttribute('data_id');
 						setTimeout(function () {
-							if (script.report_previewer.hover) { script.report_previewer.showPreview(e); }
+							if (script.reports_previewer.hover) { script.reports_previewer.showPreview(e); }
 						}, 250);
 					} catch (error) { errorHandler.handle_error(error); }
 				});
@@ -401,25 +438,24 @@ var FarmOptimizer_DefaultTemplates = {
 				link.addEventListener('mouseleave', function () {
 					try {
 						var e = this;
-						script.report_previewer.hover = false;
-						if (script.report_previewer.previewing) { script.report_previewer.closePreview(e); }
+						script.reports_previewer.hover = false;
+						if (script.reports_previewer.previewing) { script.reports_previewer.closePreview(e); }
 					} catch (error) { errorHandler.handle_error(error); }
 				});
 			},
 			showPreview: async function (e) {
 				let id = e.getAttribute('data_id');
 
-				if (script.report_previewer.previewing == id) {
+				if (script.reports_previewer.previewing == id) {
 					if (typeof this.data[id] == 'undefined') {
-						await this.get_report(id);
+						await script.data_loader.load_report(id, e.innerText);
 					}
-					script.report_previewer.link = e;
 					e.style.color = '#e01f0f';
 
 					var n = $('#' + namespace + '_report_preview')[0];
 					n.style.display = null;
 
-					$(n).find('.report-preview-content')[0].innerHTML = script.report_previewer.data[id];
+					$(n).find('.report-preview-content')[0].innerHTML = script.reports_previewer.data[id];
 
 					var s = window.innerHeight;
 					var t = e.closest('td');
@@ -449,7 +485,7 @@ var FarmOptimizer_DefaultTemplates = {
 			},
 			closePreview: function (e) {
 				e.style.color = '#603000';
-				script.report_previewer.previewing = !1;
+				script.reports_previewer.previewing = !1;
 				$('#' + namespace + '_report_preview')[0].style.display = 'none';
 			},
 			preview_css_styles: `
@@ -478,73 +514,150 @@ var FarmOptimizer_DefaultTemplates = {
 				.report-preview-content .no-preview {
 					display: none;
 				}
-			`,
-			get_report: async function (id) {
-				var report_preview;
-				$.ajax({
-					async: false,
-					url: '/game.php?screen=report&ajax=view&id=' + id,
-					dataType: 'json',
-					success: function (response) {
-						report_preview = response;
-					},
-					complete: function (XHR, textStatus) {
-						if (textStatus != 'success') {
-							throw LOCALE.ERRORS.REPORT_PREVIEWER.ERROR_1 + textStatus;
-						}
-					}
-				});
-				if (typeof report_preview.dialog != 'undefined') {
-					script.report_previewer.data[id] = report_preview.dialog;
-				}
-				else {
-					console.log(report_preview);
-					if (report_preview.error.length == 1 && report_preview.error[0] == LOCALE.DELETED_RAPORT_IN_GAME_ERROR_MESSAGE) {
-						script.report_previewer.data[id] = LOCALE.ERRORS.REPORT_PREVIEWER.ERROR_2;
-					}
-					else {
-						throw {
-							name: LOCALE.ERRORS.REPORT_PREVIEWER.ERROR_3,
-							toString: function () { return this.name; },
-							stack: report_preview
-						};
-					}
-				}
-			}
+			`
 		},
-		data_loader: {
-			progress_bar: {
-				size: 0,
-				progress: 0,
-				message: '',
-				symbol_1: '\u2B22',
-				symbol_2: '\u2B21',
-				init: function (new_size, new_message) {
-					this.size = new_size;
-					this.progress = 0;
-					this.message = new_message;
-					var bar = '';
-					for (let i=1; i<=25; i++) {
-						bar += this.symbol_2;
-					}
-					UI.InfoMessage(this.message + ' ' + bar, 5000);
-				},
-				update: function (stage = this.progress + 1) {
-					this.progress = stage;
+		reports_handler: {
+			important_reports: [],
+			determine_report_importance: function (plunder) {
+				var report_id = $(plunder.row.cells[3]).find('a')[0].href.split('view=')[1];
+	
+				if (plunder.village.report_id == report_id) {
+					return;
+				}
 
-					let progress = this.progress / this.size;
-					progress = Math.floor(progress * 25);
-					let bar = '';
-					for (let i=1; i<=25; i++) {
-						if (i<=progress) {
-							bar += this.symbol_1;
-							continue;
-						}
-						bar += this.symbol_2;;
+				var date = script.utilitys.parse_date(plunder.row.cells[4].innerText);
+				
+				var c = $(plunder.row.cells[10]).find('a')[0];
+				if (typeof c != 'undefined') {
+					this.important_reports.push({report_id, date});
+					return;
+				}
+				
+				if (plunder.village.timeStamp_build != -1) {
+					if (plunder.filters_1[2]) {
+						this.important_reports.push({report_id, date});
+						return;
 					}
-					UI.InfoMessage(this.message + ' ' + bar, 5000);
 				}
 			},
+			handle_report: function (report, id, date) {
+				let important = false;
+				for(let i = 0; i<this.important_reports.length; i++) {
+					if (this.important_reports[i] == id) {
+						this.important_reports.splice(i, 1);
+						important = true;
+						break;
+					}
+				}
+				if (!important) {
+					return;
+				}
+
+				var village_id = $(report).find('#attack_info_def .village_anchor')[0].dataset.id;
+				var plunder;
+				for (var i = 0; i < plunder_list.length; i++) {
+					if (village_id == plunder_list[i].village.id) {
+						plunder = plunder_list[i];
+						break;
+					}
+				}
+
+				plunder.village.report_id = id;
+	
+				var units_table = $(report).find('#attack_info_def_units')[0];
+				if (typeof units_table == 'undefined') {
+					plunder.village.units = true;
+					plunder.filters_1[5] = true;
+				}
+				else {
+					for (var i = 1; i < units_table.rows[2].cells.length; i++) {
+						if (units_table.rows[2].cells[i].innerText != 0) {
+							plunder.village.units = true;
+							plunder.filters_1[5] = true;
+							break;
+						}
+					}
+				}
+	
+				var res_table = $(report).find('#attack_spy_resources')[0];
+				if (typeof res_table != 'undefined') {
+					plunder.village.resources = [0,0,0];
+					plunder.village.timeStamp_res = date;
+					if (res_table.rows[0].cells[1].innerText != LOCALE.NONE) {
+						var spans = $(res_table.rows[0].cells[1]).find('span');
+						for (span of spans) {
+							var res = Number(span.innerText.replace('.',''))
+							if (span.innerHTML.indexOf('wood') != -1) {
+								plunder.village.resources[0] = res;
+								continue;
+							}
+							if (span.innerHTML.indexOf('stone') != -1) {
+								plunder.village.resources[1] = res;
+								continue;
+							}
+							if (span.innerHTML.indexOf('iron') != -1) {
+								plunder.village.resources[2] = res;
+								continue;
+							}
+						}
+					}
+				}
+
+				var buildings_data = $(report).find("#attack_spy_building_data")[0];
+				if (typeof buildings_data != 'undefined') {
+					plunder.village.timeStamp_build = date;
+					buildings_data = JSON.parse(buildings_data.value);
+					var b = plunder.village.buildings;
+					b = {
+						eco: [0,0,0],
+						eco_sum: 0,
+						wall: 0,
+						storage: 0,
+						hiding: 0
+					};
+					for (var i=0; i<buildings.length; i++) {
+						if (buildings[i].id == "wood")	{
+							b.eco[0] = Number(buildings[i].level);
+							b.eco_sum += b.eco[0];
+							continue;
+						}
+						if (buildings[i].id == "stone")	{
+							b.eco[1] = Number(buildings[i].level);
+							b.eco_sum += b.eco[1];
+							continue;
+						}
+						if (buildings[i].id == "iron") {
+							b.eco[2] = Number(buildings[i].level);
+							b.eco_sum += b.eco[2];
+							continue;
+						}
+						if (buildings[i].id == "storage" ) {
+							b.storage = script.optimizer.storage(Number(buildings[i].level));
+							continue;
+						}
+						if (buildings[i].id == "hide" ) {
+							b.hiding = script.optimizer.hiding(Number(buildings[i].level));
+							continue;
+						}
+						if (buildings[i].id == "wall") {
+							b.wall = Number(buildings[i].level);
+							continue;
+						}
+					}
+					var new_village_to_remember = true;
+					for (var i = 0; i < script_data.villages.length; i++) {
+						if (village_id == script_data.villages[i].id) {
+							new_village_to_remember = false;
+							break;
+						}
+					}
+					if (new_village_to_remember) {
+						script_data.villages.push(plunder.village);
+					}
+				}
+			},
+		},
+		data_loader: {
 			farm_assistant_options: {
 				reset_in_game_filters : async function () {
 					var checkbox;
@@ -554,35 +667,35 @@ var FarmOptimizer_DefaultTemplates = {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 
 					checkbox = $('#attacked_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 
 					checkbox = $('#full_losses_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 
 					checkbox = $('#partial_losses_checkbox')[0];
 					if (!checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 
 					checkbox = $('#full_hauls_checkbox')[0];
 					if (checkbox.checked) {
 						checkbox.click();
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 				},
 				set_page_size: async function () {
 					if ($('#farm_pagesize')[0].value < 100) {
@@ -598,7 +711,7 @@ var FarmOptimizer_DefaultTemplates = {
 						);
 						await script.utilitys.sleep();
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 				},
 				set_sorting_order: async function () {
 					$.ajax({
@@ -607,7 +720,7 @@ var FarmOptimizer_DefaultTemplates = {
 						type: 'GET'
 					});
 					await script.utilitys.sleep();
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 				},
 				prepare: async function () {
 					await this.reset_in_game_filters();
@@ -623,7 +736,7 @@ var FarmOptimizer_DefaultTemplates = {
 							await script.utilitys.sleep();
 						}
 					}
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 				}
 			},
 			script_data: {
@@ -636,7 +749,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 
 					script_data = saved_script_data;
-					script.data_loader.progress_bar.update();
+					script.progress_bar.update();
 				},
 				init: function () {
 					for (let i = 0; i < FarmOptimizer_DefaultTemplates.farming.length; i++) {
@@ -663,6 +776,38 @@ var FarmOptimizer_DefaultTemplates = {
 					localStorage.removeItem(namespace);
 					let script_data_JSON = JSON.stringify(script_data);
 					localStorage.setItem(namespace, script_data_JSON);
+				}
+			},
+			load_report: async function (id, date) {
+				var report_preview;
+				$.ajax({
+					async: false,
+					url: '/game.php?screen=report&ajax=view&id=' + id,
+					dataType: 'json',
+					success: function (response) {
+						report_preview = response;
+					},
+					complete: function (XHR, textStatus) {
+						if (textStatus != 'success') {
+							throw LOCALE.ERRORS.DATA_LOADER.REPORTS.ERROR_1 + textStatus;
+						}
+					}
+				});
+				if (typeof report_preview.dialog != 'undefined') {
+					script.reports_previewer.data[id] = report_preview.dialog;
+					script.reports_handler.handle_report(report_preview.dialog, id, date);
+				}
+				else {
+					if (report_preview.error.length == 1 && report_preview.error[0] == LOCALE.DELETED_REPORT_IN_GAME_ERROR_MESSAGE) {
+						script.reports_previewer.data[id] = LOCALE.ERRORS.DATA_LOADER.REPORTS.ERROR_2;
+					}
+					else {
+						throw {
+							name: LOCALE.ERRORS.DATA_LOADER.REPORTS.ERROR_3,
+							toString: function () { return this.name; },
+							stack: report_preview
+						};
+					}
 				}
 			},
 			load_full_plunder_list: async function () {
@@ -693,7 +838,7 @@ var FarmOptimizer_DefaultTemplates = {
 					});
 					await script.utilitys.sleep();
 				}
-				script.data_loader.progress_bar.update();
+				script.progress_bar.update();
 			},
 			load_game_data: async function () {
 				let units_speed = 0;
@@ -712,7 +857,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				});
 				script.utilitys.sleep();
-				script.data_loader.progress_bar.update();
+				script.progress_bar.update();
 				
 				$.ajax({
 					async: false,
@@ -733,7 +878,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				});
 				script.utilitys.sleep();
-				script.data_loader.progress_bar.update();
+				script.progress_bar.update();
 
 				let table = $('#group_popup_content_container > #group_table')[0];
 
@@ -745,7 +890,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 					table = $('#group_popup_content_container > #group_table')[0];
 				}
-				script.data_loader.progress_bar.update();
+				script.progress_bar.update();
 
 				if (typeof table == 'undefined') {
 					throw LOCALE.ERRORS.DATA_LOADER.VILLAGE_GROUP;
@@ -775,7 +920,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				});
 				script.utilitys.sleep();
-				script.data_loader.progress_bar.update();
+				script.progress_bar.update();
 
 				for (let i=0; i<rows.length; i++) {
 					var att_name = rows[i].cells[0].innerText;
@@ -803,9 +948,9 @@ var FarmOptimizer_DefaultTemplates = {
 
 			},
 			init: async function () {
+				await this.load_game_data();
 				await this.farm_assistant_options.prepare();
 				await this.load_full_plunder_list();
-				await this.load_game_data();
 				await this.load_attacks();
 				this.script_data.load();
 			}
@@ -833,14 +978,15 @@ var FarmOptimizer_DefaultTemplates = {
 					coords: { x: -1, y: -1 },
 					timeStamp_build: -1,
 					timeStamp_res: -1,
+					report_id: -1,
 					resources: [-1, -1, -1],
 					units: false,
 					buildings: {
 						eco: [-1, -1, -1],
 						eco_sum: -1,
 						wall: -1,
-						warehouse: -1,
-						hidingPlace: -1
+						storage: -1,
+						hiding: -1
 					}
 				};
 
@@ -882,9 +1028,9 @@ var FarmOptimizer_DefaultTemplates = {
 				var blue = $(cell).find('img')[0].src.indexOf('/blue.png') != -1 ? true : false
 				if (!green && !blue) {
 					var yellow = $(cell).find('img')[0].src.indexOf('/yellow.png') != -1 ? true : false
-					var red_yellow = $(cell).find('img')[0].src.indexOf('/red_yellow.png') != -1 ? true : false
-					var red_blue = $(cell).find('img')[0].src.indexOf('/red_blue.png') != -1 ? true : false
-					var red = $(cell).find('img')[0].src.indexOf('/red.png') != -1 ? true : false
+					//var red_yellow = $(cell).find('img')[0].src.indexOf('/red_yellow.png') != -1 ? true : false
+					//var red_blue = $(cell).find('img')[0].src.indexOf('/red_blue.png') != -1 ? true : false
+					//var red = $(cell).find('img')[0].src.indexOf('/red.png') != -1 ? true : false
 
 					if (yellow) {
 						plunder.filters_1[3] = true;
@@ -905,10 +1051,9 @@ var FarmOptimizer_DefaultTemplates = {
 				// LOOT
 				cell = plunder.row.cells[2];
 				var img = $(cell).find('img')[0];
-				if (typeof img != 'undefined')
+				if (typeof img != 'undefined') {
 					plunder.filters_1[2] = img.src.indexOf('max_loot/0.png') != -1 ? true : false
-				else
-					plunder.filters_1[2] = true;
+				}
 
 				// DISTANCE
 				cell = plunder.row.cells[3];
@@ -927,16 +1072,7 @@ var FarmOptimizer_DefaultTemplates = {
 				if (typeof img != 'undefined')
 					plunder.filters_1[1] = true;
 
-				// SCOUTED
-				cell = plunder.row.cells[10];
-				var c = $(cell).find('a')[0];
-				if (typeof c != 'undefined') {
-					reports.push({
-						url: $(plunder.row.cells[3]).find('a')[0].href,
-						plunder: plunder
-					});
-				}
-
+				script.reports_handler.determine_report_importance(plunder);
 				script.gui.plunder_list.format_row(plunder);
 			}
 
@@ -1006,11 +1142,21 @@ var FarmOptimizer_DefaultTemplates = {
 					var template_row = $('#' + namespace + '_farm_template_' + template.id)[0];
 					var inputs = $(template_row).find('input');
 
+					var speed = 0;
+					var capacity = 0;
+
 					var dif = false;
 					for (let i = 0; i < base_data.units.farm_units.length; i++) {
 						var unit = base_data.units.farm_units[i];
-						if (template.units[unit] != inputs[i + 1].value) {
-							template.units[unit] = inputs[i + 1].value;
+						var unit_num = inputs[i + 1].value;
+						if (unit_num > 0) {
+							capacity += base_data.units.capacity[unit] * unit_num;
+							if (speed < base_data.units.speed[unit]) {
+								speed = base_data.units.speed[unit];
+							}
+						}
+						if (template.units[unit] != unit_num) {
+							template.units[unit] = unit_num;
 							dif = true;
 						}
 					}
@@ -1035,15 +1181,19 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 
 					if (dif) {
+						template_row.cells[10].innerText = capacity;
+						template_row.cells[11].innerText = speed;
 						script.data_loader.script_data.save();
 					}
 				},
 				refresh: function (template) {
 					var template_row = $('#' + namespace + '_farm_template_' + template.id)[0];
 					var inputs = $(template_row).find('input');
+
 					inputs[0].value = template.name;
 					for (let i = 0; i < base_data.units.farm_units.length; i++) {
-						inputs[i + 1].value = template.units[base_data.units.farm_units[i]];
+						var unit = base_data.units.farm_units[i];
+						inputs[i + 1].value = template.units[unit];
 					}
 				},
 				delete: function (template) {
@@ -1110,17 +1260,31 @@ var FarmOptimizer_DefaultTemplates = {
 					var lvl = script_data.templates.wallbreaking.indexOf(template) + 1;
 					var template_row = $('#' + namespace + '_walbreaker_template_' + lvl)[0];
 					var inputs = $(template_row).find('input');
+					var capacity = 0;
+					var dif = false;
 					for (let i = 0; i < base_data.units.send_units.length; i++) {
-						template[base_data.units.send_units[i]] = inputs[i].value;
+						var unit = base_data.units.send_units[i];
+						var unit_num = inputs[i].value;
+						if (unit_num > 0) {
+							capacity += base_data.units.capacity[unit] * unit_num;
+						}
+						if (template[unit] != unit_num) {
+							template[unit] == unit_num;
+							dif = true;
+						}
 					}
-					script.data_loader.script_data.save();
+					if (dif) {
+						template_row.cells[13].innerText = capacity;
+						script.data_loader.script_data.save();
+					}
 				},
 				refresh: function (template) {
 					var lvl = script_data.templates.wallbreaking.indexOf(template) + 1;
 					var template_row = $('#' + namespace + '_walbreaker_template_' + lvl)[0];
 					var inputs = $(template_row).find('input');
 					for (let i = 0; i < base_data.units.send_units.length; i++) {
-						inputs[i].value = template[base_data.units.send_units[i]];
+						var unit = base_data.units.send_units[i];
+						inputs[i].value = template[unit];
 					}
 				},
 				delete: function () {
@@ -1157,7 +1321,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 
 					var form_data = {};
-					for (let i = 0; i < base_data.farm_units.length; i++) {
+					for (let i = 0; i < base_data.units.farm_units.length; i++) {
 						form_data[base_data.units.farm_units[i]] = template.units[base_data.units.farm_units[i]];
 					}
 					form_data['h'] = base_data.csrf;
@@ -1321,16 +1485,26 @@ var FarmOptimizer_DefaultTemplates = {
 			panels: {
 				farm: {
 					template_row_innerHTML: function (template) {
-						var html = `<td align="center"><input type="text" name="name" size="10" value="${template.name}"></td>`;
+						var capacity = 0;
+						var speed = 0;
+
+						var html = `<td align="center"><input type="text" name="name" size="10" value="${template.name}" maxlength="15"></td>`;
 
 						for (let i = 0; i < base_data.units.farm_units.length; i++) {
 							var unit = base_data.units.farm_units[i];
+							var unit_num = template.units[unit];
+							if (unit_num > 0) {
+								capacity += base_data.units.capacity[unit] * unit_num;
+								if (speed < base_data.units.speed[unit]) {
+									speed = base_data.units.speed[unit];
+								}
+							}
 							html += `<td align="center"><input type="text" name="${unit}" size="1" value="${template.units[unit]}"></td>`;
 						}
 
 						html += `
-							<td class='${namespace}_haul' style="text-align:center">0</td>
-							<td class='${namespace}_speed' style="text-align:center">0</td>
+							<td class='${namespace}_haul' style="text-align:center">${capacity}</td>
+							<td class='${namespace}_speed' style="text-align:center">${speed}</td>
 							<td align="center">
 								<div>
 									<input class="btn btn-confirm-yes"	type="button" value="${LOCALE.BUTTONS.SAVE}">
@@ -1384,10 +1558,10 @@ var FarmOptimizer_DefaultTemplates = {
 						}
 
 						html += `
-							<th style="text-align:center" width="60">
+							<th style="text-align:center">
 								<span class="icon header ressources"></span>
 							</th>
-							<th style="text-align:center" width="60">
+							<th style="text-align:center">
 								<img src="${ICONS.SPEED}" title="${LOCALE.SPEED}" alt="" class="">
 							</th>
 							<th></th>
@@ -1397,6 +1571,7 @@ var FarmOptimizer_DefaultTemplates = {
 					},
 					create_template_row: function (template) {
 						const template_row = document.createElement('tr');
+						template_row.classList.add('nowrap');
 						template_row.innerHTML = this.template_row_innerHTML(template);
 						template_row.id = namespace + '_farm_template_' + template.id;
 
@@ -1467,15 +1642,21 @@ var FarmOptimizer_DefaultTemplates = {
 				},
 				wallbreaker: {
 					template_row_innerHTML: function (i, template) {
+						var capacity = 0;
+
 						var html = `<td align="center"><strong>${i}</strong></td>`;
 
 						for (let i = 0; i < base_data.units.send_units.length; i++) {
 							var unit = base_data.units.send_units[i];
+							var unit_num = template[unit];
+							if (unit_num > 0) {
+								capacity += base_data.units.capacity[unit] * unit_num;
+							}
 							html += `<td align="center"><input type="text" name="${unit}" size="1" value="${template[unit]}"></td>`;
 						}
 
 						html += `
-							<td class='${namespace}_haul' style="text-align:center">0</td>
+							<td class='${namespace}_haul' style="text-align:center">${capacity}</td>
 							<td align="center">
 								<div>
 									<input class="btn btn-confirm-yes"	type="button" value="${LOCALE.BUTTONS.SAVE}">
@@ -1540,6 +1721,7 @@ var FarmOptimizer_DefaultTemplates = {
 					},
 					create_template_row: function (i) {
 						const template_row = document.createElement('tr');
+						template_row.classList.add('nowrap');
 						template_row.innerHTML = this.template_row_innerHTML(i + 1, script_data.templates.wallbreaking[i]);
 						template_row.id = namespace + '_walbreaker_template_' + (i + 1);
 						var template_buttons = $(template_row).find('.btn');
@@ -1651,7 +1833,7 @@ var FarmOptimizer_DefaultTemplates = {
 						radio.id = namespace + '_radio_' + slot_ab + '_template_' + template.id;
 						radio.name = namespace + '_radio_' + slot_ab;
 						radio.value = template.id;
-						radio.style.margin = '3px 5px 0px 0px';
+						radio.style.margin = '0px 5px 0px 0px';
 
 						let t_url = url;
 						let t_id = template.id;
@@ -1679,7 +1861,7 @@ var FarmOptimizer_DefaultTemplates = {
 						radio_other.id = namespace + '_radio_' + slot_ab + '_template_0';
 						radio_other.name = namespace + '_radio_' + slot_ab;
 						radio_other.value = 0;
-						radio_other.style.margin = '3px 5px 0px 0px';
+						radio_other.style.margin = '0px 5px 0px 0px';
 						radio_other.disabled = true;
 						base_data.active_template_radio[slot_ab] = radio_other;
 
@@ -1696,7 +1878,7 @@ var FarmOptimizer_DefaultTemplates = {
 						list_cell.rowSpan = '2';
 
 						const list_form = document.createElement('form');
-						list_form.style.fontSize = '10pt';
+						list_form.style.fontSize = '12pt';
 						list_form.id = namespace + '_radio_list_' + slot_ab;
 						list_cell.append(list_form);
 
@@ -1830,7 +2012,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 						const table = document.createElement('table');
 						table.classList.add('vis');
-						table.width = '100%';
+						table.style.width = '100%';
 						settings_content_div.append(table);
 
 						const header_row = document.createElement('tr');
@@ -1849,6 +2031,7 @@ var FarmOptimizer_DefaultTemplates = {
 						table.append(content_row_1);
 
 						const content_row_2 = document.createElement('tr');
+						content_row_2.classList.add('nowrap');
 						table.append(content_row_2);
 				
 						content_row_2.append(this.create_filters_1_cell());
@@ -1924,6 +2107,7 @@ var FarmOptimizer_DefaultTemplates = {
 					const village = document.createElement('th');
 					village.innerHTML = `<span class="icon header village"></span>`;
 					village.style.textAlign = 'center';
+					village.style.width = '130px';
 					row.append(village);
 
 					const prod = document.createElement('th');
@@ -1953,8 +2137,9 @@ var FarmOptimizer_DefaultTemplates = {
 					row.append(loot);
 
 					const report = document.createElement('th');
-					report.innerText = 'Raport';
+					report.innerText = LOCALE.REPORT;
 					report.style.textAlign = 'center';
+					report.style.width = '185px';
 					row.append(report);
 
 					const optimizer_a = document.createElement('th');
@@ -2075,6 +2260,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				},
 				format_row: function (plunder) {
+					plunder.row.classList.add('nowrap');
 					plunder.row.cells[0].remove();
 
 					const dot		= plunder.row.cells[0]; dot.remove();
@@ -2111,7 +2297,7 @@ var FarmOptimizer_DefaultTemplates = {
 					plunder.row.append(wallbreaker);
 					plunder.row.append(place);
 
-					script.report_previewer.create_link($(village).find('a')[0].href, report);
+					script.reports_previewer.create_link($(village).find('a')[0].href, report);
 					this.format_cell_village(village, plunder);
 					this.format_cell_prod(prod, plunder.village.buildings.eco);
 					this.format_cell_dist(dist);
@@ -2268,10 +2454,10 @@ var FarmOptimizer_DefaultTemplates = {
 				return;
 			}
 
-			script.data_loader.progress_bar.init(14, LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING);
+			script.progress_bar.init(14, LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING);
 			await script.data_loader.init();
 			script.gui.create();
-			script.report_previewer.init();
+			script.reports_previewer.init();
 			script.handle_rows();
 			script.gui.plunder_list.populate();
 			script.override_game_functions();
