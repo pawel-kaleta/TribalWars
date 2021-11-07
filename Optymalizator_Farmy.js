@@ -58,10 +58,10 @@ var FarmOptimizer_DefaultTemplates = {
 					PLUNDER_LIST_PAGE: 'Nie udało się pobrać strony z plądrowaniami, status żądania: ',
 					INTERFACE_WORLD: 'Nie udało się pobrać z /interface.php ustawień świata, status żądania: ',
 					INTERFACE_UNITS: 'Nie udało się pobrać z /interface.php informacji o jednostkach, status żądania: ',
-					ATTACKS: 'Nie udało się pobrać strony z trwającymi atakami, status żądania: '
+					ATTACKS: 'Nie udało się pobrać strony z trwającymi atakami, status żądania: ',
+					NO_REPORTS: 'Przecież nie masz żadnego raportu z plądrowania...'
 				},
 				DATE_RECOGNITION: 'Nie rozpoznano formatu daty'
-
 			},
 			BUTTONS: {
 				SAVE: 'Zapisz',
@@ -220,7 +220,6 @@ var FarmOptimizer_DefaultTemplates = {
 	 *	}
 	 */
 	var attacks = [];
-	var reports = [];
 	var base_data = {
 		template_forms: {
 			a: $('a.farm_icon.farm_icon_a.decoration').closest('form')[0],
@@ -838,6 +837,9 @@ var FarmOptimizer_DefaultTemplates = {
 			},
 			load_full_plunder_list: async function () {
 				var plunder_table = $('#plunder_list')[0];
+				if (typeof plunder_table == 'undefined' || typeof plunder_table.rows[2] == 'undefined') {
+					throw LOCALE.ERRORS.DATA_LOADER.NO_REPORTS;
+				}
 				while (plunder_table.rows.length > 2) {
 					plunder_list.push({ row: plunder_table.rows[2] });
 					plunder_table.rows[2].remove();
@@ -911,12 +913,18 @@ var FarmOptimizer_DefaultTemplates = {
 				if (typeof table == 'undefined') {
 					$('#open_groups')[0].click();
 					await script.utilitys.sleep(400);
+					script.progress_bar.update();
 					$('#close_groups')[0].click();
 					await script.utilitys.sleep(400);
+					script.progress_bar.update();
 
 					table = $('#group_popup_content_container > #group_table')[0];
 				}
-				script.progress_bar.update();
+				else {
+					script.progress_bar.update();
+					script.progress_bar.update();
+				}
+				
 
 				if (typeof table == 'undefined') {
 					throw LOCALE.ERRORS.DATA_LOADER.VILLAGE_GROUP;
@@ -994,7 +1002,7 @@ var FarmOptimizer_DefaultTemplates = {
 				return 112.51 * Math.pow(Math.E, 0.2878*lvl);
 			},
 			prepare_template: function (plunder, icon, slot_ab) {
-
+				UI.ErrorMessage(LOCALE.TITLE + ': Funkcjonalność jeszcze nie zaimplementowana');
 			}
 		},
 		handle_rows: function () {
@@ -2495,7 +2503,7 @@ var FarmOptimizer_DefaultTemplates = {
 				return;
 			}
 
-			script.progress_bar.init(14, LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING);
+			script.progress_bar.init(15, LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING);
 			await script.data_loader.init();
 			script.gui.create();
 			script.reports_previewer.init();
