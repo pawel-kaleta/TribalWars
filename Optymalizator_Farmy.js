@@ -33,7 +33,9 @@ var FarmOptimizer_DefaultTemplates = {
 				WRONG_SCREEN_ERROR: 'Uruchom skrypt w Asystencie Farmera',
 				LOADING: 'Wczytywanie...',
 				LOADING_FINISHED: 'Wczytywanie zakończone',
-				DELAY: 'Klikasz za szybko!'
+				DELAY: 'Klikasz za szybko!',
+				DOWNLOADING_REPORTS: 'Pobieranie raportów...',
+				DOWNLOADING_FINISHED: 'Pobieranie zakończone'
 			},
 			ERRORS: {
 				TITLE: 'Coś poszło nie tak...',
@@ -315,7 +317,6 @@ var FarmOptimizer_DefaultTemplates = {
 
 				const time_matches = date_string.slice(time_offset).match(/\d+(?::\d+)*/g);
 				if (!time_matches || time_matches.length > 1 || (date_matches && date_matches.length > 1)) {
-					console.log(time_matches);
 					throw LOCALE.ERRORS.DATE_RECOGNITION + ': "' + date_string + '"';
 				}
 
@@ -529,13 +530,13 @@ var FarmOptimizer_DefaultTemplates = {
 				
 				var c = $(plunder.row.cells[10]).find('a')[0];
 				if (typeof c != 'undefined') {
-					this.important_reports.push({report_id, date});
+					this.important_reports.push({id: report_id, date: date});
 					return;
 				}
 				
 				if (plunder.village.timeStamp_build != -1) {
 					if (plunder.filters_1[2]) {
-						this.important_reports.push({report_id, date});
+						this.important_reports.push({id: report_id, date: date});
 						return;
 					}
 				}
@@ -543,7 +544,7 @@ var FarmOptimizer_DefaultTemplates = {
 			handle_report: function (report, id, date) {
 				let important = false;
 				for(let i = 0; i<this.important_reports.length; i++) {
-					if (this.important_reports[i] == id) {
+					if (this.important_reports[i].id == id) {
 						this.important_reports.splice(i, 1);
 						important = true;
 						break;
@@ -553,7 +554,9 @@ var FarmOptimizer_DefaultTemplates = {
 					return;
 				}
 
-				var village_id = $(report).find('#attack_info_def .village_anchor')[0].dataset.id;
+				$('#' + namespace + '_report_preview').find('.report-preview-content')[0].innerHTML = report;
+
+				var village_id = $('.report-preview-content').find('#attack_info_def .village_anchor')[0].dataset.id;
 				var plunder;
 				for (var i = 0; i < plunder_list.length; i++) {
 					if (village_id == plunder_list[i].village.id) {
@@ -564,7 +567,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 				plunder.village.report_id = id;
 	
-				var units_table = $(report).find('#attack_info_def_units')[0];
+				var units_table = $('.report-preview-content').find('#attack_info_def_units')[0];
 				if (typeof units_table == 'undefined') {
 					plunder.village.units = true;
 					plunder.filters_1[5] = true;
@@ -579,7 +582,7 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				}
 	
-				var res_table = $(report).find('#attack_spy_resources')[0];
+				var res_table = $('.report-preview-content').find('#attack_spy_resources')[0];
 				if (typeof res_table != 'undefined') {
 					plunder.village.resources = [0,0,0];
 					plunder.village.timeStamp_res = date;
@@ -603,47 +606,53 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 				}
 
-				var buildings_data = $(report).find("#attack_spy_building_data")[0];
+				var buildings_data = $('.report-preview-content').find("#attack_spy_building_data")[0];
 				if (typeof buildings_data != 'undefined') {
 					plunder.village.timeStamp_build = date;
 					buildings_data = JSON.parse(buildings_data.value);
-					var b = plunder.village.buildings;
-					b = {
+					plunder.village.buildings = {
 						eco: [0,0,0],
 						eco_sum: 0,
 						wall: 0,
 						storage: 0,
 						hiding: 0
 					};
-					for (var i=0; i<buildings.length; i++) {
-						if (buildings[i].id == "wood")	{
-							b.eco[0] = Number(buildings[i].level);
+					var b = plunder.village.buildings;
+					for (var i=0; i<buildings_data.length; i++) {
+						if (buildings_data[i].id == "wood")	{
+							b.eco[0] = Number(buildings_data[i].level);
 							b.eco_sum += b.eco[0];
 							continue;
 						}
-						if (buildings[i].id == "stone")	{
-							b.eco[1] = Number(buildings[i].level);
+						if (buildings_data[i].id == "stone")	{
+							b.eco[1] = Number(buildings_data[i].level);
 							b.eco_sum += b.eco[1];
 							continue;
 						}
-						if (buildings[i].id == "iron") {
-							b.eco[2] = Number(buildings[i].level);
+						if (buildings_data[i].id == "iron") {
+							b.eco[2] = Number(buildings_data[i].level);
 							b.eco_sum += b.eco[2];
 							continue;
 						}
-						if (buildings[i].id == "storage" ) {
-							b.storage = script.optimizer.storage(Number(buildings[i].level));
+						if (buildings_data[i].id == "storage" ) {
+							b.storage = script.optimizer.storage(Number(buildings_data[i].level));
 							continue;
 						}
-						if (buildings[i].id == "hide" ) {
-							b.hiding = script.optimizer.hiding(Number(buildings[i].level));
+						if (buildings_data[i].id == "hide" ) {
+							b.hiding = script.optimizer.hiding(Number(buildings_data[i].level));
 							continue;
 						}
-						if (buildings[i].id == "wall") {
-							b.wall = Number(buildings[i].level);
+						if (buildings_data[i].id == "wall") {
+							b.wall = Number(buildings_data[i].level);
 							continue;
 						}
 					}
+
+					script.gui.plunder_list.format_cell_prod(plunder.row.cells[1], plunder, b.eco);
+					script.gui.plunder_list.format_cell_warning(plunder.row.cells[8], plunder);
+					script.gui.plunder_list.format_cell_optimize(plunder.row.cells[9], plunder, 'a');
+					script.gui.plunder_list.format_cell_optimize(plunder.row.cells[11], plunder, 'b');
+
 					var new_village_to_remember = true;
 					for (var i = 0; i < script_data.villages.length; i++) {
 						if (village_id == script_data.villages[i].id) {
@@ -653,9 +662,22 @@ var FarmOptimizer_DefaultTemplates = {
 					}
 					if (new_village_to_remember) {
 						script_data.villages.push(plunder.village);
+						script.data_loader.script_data.save();
 					}
 				}
 			},
+			get_important_reports: async function () {
+				script.progress_bar.init(this.important_reports.length, LOCALE.TITLE + ': ' + LOCALE.POPUPS.DOWNLOADING_REPORTS);
+				while (this.important_reports.length > 0) {
+					if (this.important_reports[0]) {
+						await script.data_loader.load_report(this.important_reports[0].id, this.important_reports[0].date);
+						await script.utilitys.sleep();
+						script.progress_bar.update();
+					}
+				}
+				script.data_loader.script_data.save();
+				UI.SuccessMessage(LOCALE.TITLE + ': ' + LOCALE.POPUPS.DOWNLOADING_FINISHED);
+			}
 		},
 		data_loader: {
 			farm_assistant_options: {
@@ -744,8 +766,12 @@ var FarmOptimizer_DefaultTemplates = {
 					var saved_script_data = JSON.parse(localStorage.getItem(namespace));
 
 					if (saved_script_data == null) {
+						console.log('SCRIPT DATA INIT !!!')
 						this.init();
 						return;
+					}
+					else {
+						console.log(saved_script_data);
 					}
 
 					script_data = saved_script_data;
@@ -972,6 +998,7 @@ var FarmOptimizer_DefaultTemplates = {
 			}
 		},
 		handle_rows: function () {
+			var new_data = false;
 			for (plunder of plunder_list) {
 				plunder['village'] = {
 					id: -1,
@@ -1012,6 +1039,7 @@ var FarmOptimizer_DefaultTemplates = {
 				if (cell.innerText != '?') {
 					plunder.village.buildings.wall = Number(cell.innerText);
 					if (!known_village) {
+						new_data = true;
 						script_data.villages.push(plunder.village);
 					}
 				}
@@ -1034,6 +1062,8 @@ var FarmOptimizer_DefaultTemplates = {
 
 					if (yellow) {
 						plunder.filters_1[3] = true;
+						plunder.village.units = false;
+						new_data = true;
 
 						if (plunder.village.buildings.wall != 0) {
 							plunder.filters_1[5] = true;
@@ -1044,7 +1074,14 @@ var FarmOptimizer_DefaultTemplates = {
 						plunder.filters_1[5] = true;
 						if (plunder.village.buildings.wall == 0) {
 							plunder.village.units = true;
+							new_data = true;
 						}
+					}
+				}
+				else {
+					if (green) {
+						plunder.village.units = false;
+						new_data = true;
 					}
 				}
 
@@ -1075,7 +1112,9 @@ var FarmOptimizer_DefaultTemplates = {
 				script.reports_handler.determine_report_importance(plunder);
 				script.gui.plunder_list.format_row(plunder);
 			}
-
+			if (new_data) {
+				script.data_loader.script_data.save();
+			}
 		},
 		panels: {
 			farm: {
@@ -1379,10 +1418,9 @@ var FarmOptimizer_DefaultTemplates = {
 									if (plunder.village.buildings.wall <= param) {
 										hide = true;
 									}
-									console.log(hide);
 									break;
 								case 1:
-									if (plunder.village.buildings.eco_sum >= param) {
+									if (plunder.village.buildings.eco_sum == -1 || plunder.village.buildings.eco_sum >= param) {
 										hide = true;
 									}
 									break;
@@ -1456,7 +1494,6 @@ var FarmOptimizer_DefaultTemplates = {
 					var filters = script_data.settings.filters;
 
 					for (let i = 0; i < filters.find_1.length; i++) {
-
 						filters.find_1[i] = form_1['find_' + i].checked;
 						filters.hide_1[i] = form_1['hide_' + i].checked;
 					}
@@ -1872,7 +1909,7 @@ var FarmOptimizer_DefaultTemplates = {
 						return radio_other;
 					},
 					create_template_list_cell: function (slot_ab, url) {
-						var slot_id = url.split('template_id=')[1];
+						var slot_id = url.split('template_id=')[1].split('&')[0];
 
 						const list_cell = document.createElement('td');
 						list_cell.rowSpan = '2';
@@ -1897,6 +1934,10 @@ var FarmOptimizer_DefaultTemplates = {
 								var dif = false;
 								for (let i = 0; i < base_data.units.farm_units.length; i++) {
 									var unit = base_data.units.farm_units[i];
+									console.log(slot_id);
+									console.log(Accountmanager.farm.templates);
+									console.log(Accountmanager.farm.templates['t_' + slot_id]);
+
 									var slot_unit = Accountmanager.farm.templates['t_' + slot_id][unit];
 									var template_unit = template.units[unit];
 									if (slot_unit) {
@@ -2176,10 +2217,10 @@ var FarmOptimizer_DefaultTemplates = {
 						</span>
 					`;
 				},
-				format_cell_prod: function (td, eco) {
+				format_cell_prod: function (td, plunder, eco) {
 					td.style.textAlign = 'center';
 					td.colSpan = 1;
-					if (plunder.village.timeStamp_build > 0) {
+					if (plunder.village.timeStamp_build != -1) {
 						td.innerHTML = `${eco[0]} / ${eco[1]} / ${eco[2]}`;
 					}
 					else {
@@ -2299,7 +2340,7 @@ var FarmOptimizer_DefaultTemplates = {
 
 					script.reports_previewer.create_link($(village).find('a')[0].href, report);
 					this.format_cell_village(village, plunder);
-					this.format_cell_prod(prod, plunder.village.buildings.eco);
+					this.format_cell_prod(prod, plunder, plunder.village.buildings.eco);
 					this.format_cell_dist(dist);
 					this.format_cell_attacks(attacks, $(village).find('img')[0]);
 					this.format_cell_warning(warning, plunder);
@@ -2444,7 +2485,7 @@ var FarmOptimizer_DefaultTemplates = {
 			}
 
 			// TESTING!!!
-			localStorage.removeItem(namespace);
+			//localStorage.removeItem(namespace);
 			//
 
 			if (i18e[game_data.locale] != null)
@@ -2462,6 +2503,7 @@ var FarmOptimizer_DefaultTemplates = {
 			script.gui.plunder_list.populate();
 			script.override_game_functions();
 			UI.SuccessMessage(LOCALE.TITLE + ': ' + LOCALE.POPUPS.LOADING_FINISHED);
+			await script.reports_handler.get_important_reports();
 		}
 	};
 
