@@ -1,7 +1,7 @@
 javascript:
 
 //	author:		PabloCanaletto
-//	version:	2.1.0.1
+//	version:	2.1.1.0
 //	disclaimer:	You are free to use this script in any way you like and to submit changes.
 //				I would only appreciate you to leave notification about my orginal authorship untouched
 //				with the whole history of changes.
@@ -26,20 +26,27 @@ var DysponentSurowcowy = {
 //		2.1.0.0 by PabloCanaletto
 //			> initial release
 //		2.1.0.1 by PabloCanaletto
-//			> bug fix - sitter handling in planExecutor
+//			> Bug fix - sitter handling in setVillageAndGroup()
+//		2.1.1.0 by PabloCanaletto
+//			> Bug fix - preventOverflowing() | no receivers ==> shift()
+//			> Bug fix - getOngoingTransports() | handling more strange cases (no transports, no villages, etc.)
+//			> Bug fix - preventOverflowing() while_1 | (present - 1000 < safeguard) ==> shift()
+//			> Bug fix - fillVillages() while_1 | (owned + 1000 > overFlowThreshold) ==> shift()
 
 (async function (TribalWars) {
 	const namespace = 'Dysponent_Surowcowy_2';
-	const version = 'v2.1.0.1';
+	const version = 'v2.1.1.0';
     const Debugger = {
 		log: [{count: 1, message: 'Dysponent Surowcowy - Debug Log:'}],
 		logLine: function (line) {
 			let last_line = this.log[this.log.length-1];
 			if (last_line.message == line) { 
 				last_line.count++ 
+				
 				return;
 			}
 			this.log.push({count: 1, message: line});
+			
 		},
 		saveLog: function () {
 			let string = '';
@@ -980,7 +987,11 @@ var DysponentSurowcowy = {
 
 				let table = $(data).find('#trades_table').get()[0];
 				if (!table) { 
-					if($(data).find('#paged_view_content > table:nth-child(7) > tbody > tr > td')[0].innerText.split(': ')[1] === '0') {
+					let traders_sum = $(data).find('#paged_view_content > table');
+					traders_sum = traders_sum[traders_sum.length - 1];
+					traders_sum = $(traders_sum).find('tbody > tr > td')[0].innerText.split(': ')[1];
+
+					if(traders_sum === '0') {
 						return;
 					}
 					throw 'Wyst\u0105pi\u0142 b\u0142\u0105d podczas pobierania danych z przegl\u0105du transport\xF3w. Skrypt nie b\u0119dzie w stanie ich uwzgl\u0119dni\u0107 opracowuj\u0105c plan!';
@@ -1084,6 +1095,12 @@ var DysponentSurowcowy = {
 					let lack = resoucesTargetLevel[res];
 					let capacity = receiver.granary * Settings.overFlowThreshold / 100;
 					if (capacity < lack) { lack = capacity;	}
+
+					if (receiver.resources.owned[res] + 1000 > receiver.granary * Settings.overFlowThreshold / 100) {
+						Debugger.logLine('		fillVillages() while_1 | (owned + 1000 > overFlowThreshold) ==> shift()');
+						shortages[res].shift();
+						continue;
+					}
 
 					lack -= receiver.resources.owned[res];
 					if (lack < 1000) {
@@ -1219,6 +1236,12 @@ var DysponentSurowcowy = {
 
 					if (typeof sender === null || typeof res === null) { throw 'preventOverflowing(): no sender or no res'; }
 
+					if (!villagesWithSpareGranary[res][0]) {
+						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | no receivers ==> shift()"); }
+						villagesWithOverFlow[res].shift();
+						continue;
+					}
+
 					let overFlow = sender.resources.owned[res];
 					overFlow -= sender.granary * resoucesTargetLevel / 100;
 					if (overFlow <= 0) {
@@ -1235,12 +1258,20 @@ var DysponentSurowcowy = {
 
 					if (sender.resources.present[res] - overFlow < Settings.resourcesSafeguard[res]) {
 						overFlow = sender.resources.present[res] - Settings.resourcesSafeguard[res];
-						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (present - overFlow < safeguard) ==> overFlow = present - safeguard"); }
-						if (overFlow <= 0) {
+						if (Settings.debug) {
+							Debugger.logLine("		preventOverflowing() while_1 | (present - overFlow < safeguard) ==> overFlow = present - safeguard");
+						}
+						if (overFlow < 0) {
 							if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (overFlow <= 0) ==> shift()"); }
 							villagesWithOverFlow[res].shift();
 							continue;
 						}
+					}
+
+					if (sender.resources.present[res] - 1000 < Settings.resourcesSafeguard[res]) {
+						if (Settings.debug) { Debugger.logLine("		preventOverflowing() while_1 | (present - 1000 < safeguard) ==> shift()"); }
+						villagesWithOverFlow[res].shift();
+						continue;
 					}
 
 					compareVillages.refCoords = sender.coords;
